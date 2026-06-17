@@ -1,0 +1,8 @@
+/backend/target/
+*.log
+*.class
+*.jar
+/.vscode/*.code-workspace
+.DS_Store
+/backend/uploads/
+/uploads/
