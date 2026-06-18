@@ -55,7 +55,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -207,7 +206,12 @@ class ArticleController {
             log.info("Migrated {} legacy articles to published=true", legacy.size());
         }
     }
-
+@GetMapping("/api/articles/{id}")
+public ResponseEntity<Article> getArticle(@PathVariable String id) {
+    return articleRepo.findById(id)
+        .map(ResponseEntity::ok)
+        .orElse(ResponseEntity.notFound().build());
+}
     // GET /api/articles?category=X&page=0&size=12
     @GetMapping
     public Map<String, Object> list(
@@ -253,8 +257,13 @@ class ArticleController {
         if (req.getTitle()      != null && !req.getTitle().isBlank())    a.setTitle(req.getTitle());
         if (req.getDek()        != null)                                  a.setDek(req.getDek());
         if (req.getCategory()   != null && !req.getCategory().isBlank()) a.setCategory(req.getCategory());
-        if (req.getCoverImage() != null)                                  a.setCoverImage(req.getCoverImage());
+        if (req.getCoverImageUrls() != null && !req.getCoverImageUrls().isEmpty()) {
+            a.setCoverImageUrls(req.getCoverImageUrls());
+        } else if (req.getCoverImage() != null && !req.getCoverImage().isBlank()) {
+            a.setCoverImageUrls(List.of(req.getCoverImage().trim()));
+        }
         if (req.getBody()       != null && !req.getBody().isEmpty())      a.setBody(req.getBody());
+        if (req.getVideoUrl()   != null)                                 a.setVideoUrl(req.getVideoUrl());
         articleRepo.save(a);
         return ResponseEntity.ok(Map.of("status", "updated"));
     }
@@ -372,7 +381,7 @@ class ArticleController {
             Article a = new Article();
             a.setId(s.id()); a.setTitle(s.title()); a.setCategory(s.cat());
             a.setAuthor(s.author()); a.setDek(s.dek()); a.setBody(s.body());
-            a.setCoverImage(s.img()); a.setDate(Instant.parse(s.date()+"T00:00:00Z"));
+            a.setCoverImageUrls(List.of(s.img())); a.setDate(Instant.parse(s.date()+"T00:00:00Z"));
             a.setPinned(false); a.setPublished(true);
             articleRepo.save(a);
         });
@@ -380,13 +389,17 @@ class ArticleController {
     }
 
     private Map<String, Object> toSummary(Article a) {
+        String cover = "";
+        if (a.getCoverImageUrls() != null && !a.getCoverImageUrls().isEmpty()) {
+            cover = a.getCoverImageUrls().get(0);
+        }
         return Map.of(
             "id",         a.getId(),
             "title",      a.getTitle(),
             "dek",        a.getDek(),
             "category",   a.getCategory(),
             "author",     a.getAuthor(),
-            "coverImage", a.getCoverImage() != null ? a.getCoverImage() : "",
+            "coverImage", cover,
             "date",       a.getDate().toString(),
             "pinned",     a.isPinned(),
             "published",  Boolean.TRUE.equals(a.getPublished())
@@ -394,7 +407,8 @@ class ArticleController {
     }
 
     @Data static class ArticleUpdateRequest {
-        String title, dek, category, coverImage, richBody;
+        String title, dek, category, coverImage, richBody, videoUrl;
+        List<String> coverImageUrls;
         List<String> body;
     }
 }
@@ -547,12 +561,14 @@ class AuthController {
 @RestController
 @RequestMapping("/api/submissions")
 @RequiredArgsConstructor
+@Slf4j
 class SubmissionController {
     private final SubmissionRepository submissionRepo;
     private final ArticleRepository articleRepo;
     private final UserRepository userRepo;
+    private final UploadController uploadController;
 
-    private static final Set<String> VALID_CATEGORIES = Set.of("Fashion", "Lifestyle", "Photography", "Culture");
+    private static final Set<String> VALID_CATEGORIES = Set.of("Fashion", "Lifestyle", "Photography", "Culture","Podcast");
 
     private ResponseEntity<?> validateCategory(String category) {
         if (!VALID_CATEGORIES.contains(category)) {
@@ -564,20 +580,45 @@ class SubmissionController {
 
     @Data static class SubmissionRequest {
         @NotBlank String title; @NotBlank String dek; @NotBlank String category;
-        List<String> body; String richBody; String coverImage = "";
+        List<String> body; String richBody; String coverImage = ""; List<String> coverImageUrls; String videoUrl;
     }
     @Data static class ReturnRequest { String note = ""; }
 
-    @PostMapping
+    @PostMapping(consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<?> create(@AuthenticationPrincipal String username,
-                                    @Valid @RequestBody SubmissionRequest req) {
+                                    @Valid SubmissionRequest req,
+                                    @RequestPart(value = "images", required = false) MultipartFile[] images) {
         ResponseEntity<?> catErr = validateCategory(req.category);
         if (catErr != null) return catErr;
         User user = userRepo.findByUsername(username).orElse(null);
         if (user == null) return ResponseEntity.status(401).build();
+
+        List<String> imageUrls = new ArrayList<>();
+        if (req.coverImageUrls != null && !req.coverImageUrls.isEmpty()) {
+            req.coverImageUrls.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .forEach(imageUrls::add);
+        }
+        if (req.coverImage != null && !req.coverImage.isBlank()) {
+            imageUrls.add(req.coverImage.trim());
+        }
+        if (images != null) {
+            for (MultipartFile file : images) {
+                if (file == null || file.isEmpty()) continue;
+                try {
+                    imageUrls.add(uploadController.storeImage(file));
+                } catch (IOException e) {
+                    log.error("Image upload failed: {}", e.getMessage());
+                    return ResponseEntity.internalServerError().body(Map.of("message", "Image upload failed."));
+                }
+            }
+        }
+
         Submission s = new Submission();
         s.setTitle(req.title); s.setDek(req.dek); s.setCategory(req.category);
-        s.setBody(req.body); s.setCoverImage(req.coverImage);
+        s.setBody(req.body); s.setCoverImageUrls(imageUrls); s.setVideoUrl(req.videoUrl);
         s.setAuthor(user.getDisplayName()); s.setSubmitterUsername(username);
         s.setStatus("pending"); s.setNote(""); s.setDate(Instant.now());
         submissionRepo.save(s);
@@ -619,7 +660,13 @@ class SubmissionController {
             return ResponseEntity.status(400).body(Map.of("message", "Only returned submissions can be resubmitted."));
         }
         s.setTitle(req.title); s.setDek(req.dek); s.setCategory(req.category);
-        s.setBody(req.body); s.setCoverImage(req.coverImage);
+        s.setBody(req.body);
+        if (req.coverImageUrls != null && !req.coverImageUrls.isEmpty()) {
+            s.setCoverImageUrls(req.coverImageUrls.stream().filter(Objects::nonNull).map(String::trim).filter(s1 -> !s1.isBlank()).toList());
+        } else if (req.coverImage != null && !req.coverImage.isBlank()) {
+            s.setCoverImageUrls(List.of(req.coverImage.trim()));
+        }
+        if (req.getVideoUrl() != null) s.setVideoUrl(req.getVideoUrl());
         s.setStatus("pending"); s.setNote(""); s.setDate(Instant.now());
         submissionRepo.save(s);
         return ResponseEntity.ok(Map.of("status", "pending"));
@@ -648,9 +695,12 @@ class SubmissionController {
         Article a = new Article();
         a.setId(s.getId()); a.setTitle(s.getTitle()); a.setDek(s.getDek());
         a.setCategory(s.getCategory()); a.setAuthor(s.getAuthor()); a.setBody(s.getBody());
-        a.setCoverImage((s.getCoverImage() != null && !s.getCoverImage().isBlank())
-            ? s.getCoverImage()
-            : "https://images.unsplash.com/photo-1495121605193-b116b5b9c5fe?auto=format&fit=crop&w=1600&q=80");
+        if (s.getCoverImageUrls() != null && !s.getCoverImageUrls().isEmpty()) {
+            a.setCoverImageUrls(s.getCoverImageUrls());
+        } else {
+            a.setCoverImageUrls(List.of("https://images.unsplash.com/photo-1495121605193-b116b5b9c5fe?auto=format&fit=crop&w=1600&q=80"));
+        }
+        a.setVideoUrl(s.getVideoUrl());
         a.setDate(Instant.now()); a.setPinned(false); a.setPublished(true);
         articleRepo.save(a);
         s.setStatus("published");
@@ -724,35 +774,41 @@ class UploadController {
         }
     }
 
+    public String storeImage(MultipartFile file) throws IOException {
+        if (file.isEmpty()) throw new IOException("No file received.");
+        String ct = file.getContentType();
+        if (ct == null || !ct.startsWith("image/")) throw new IOException("Only image files are accepted.");
+        if (cloudinary != null) {
+            @SuppressWarnings("unchecked")
+            Map<String,Object> result = cloudinary.uploader().upload(file.getBytes(),
+                ObjectUtils.asMap("folder","grafide","resource_type","image"));
+            return (String) result.get("secure_url");
+        } else {
+            String original = file.getOriginalFilename();
+            String ext = (original != null && original.contains("."))
+                ? original.substring(original.lastIndexOf('.')) : ".jpg";
+            String filename = UUID.randomUUID() + ext;
+            Path dest = uploadPath.resolve(filename).normalize();
+            if (!dest.startsWith(uploadPath)) throw new IOException("Invalid filename.");
+            file.transferTo(dest);
+            return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/api/upload/images/").path(filename).toUriString();
+        }
+    }
+
     @PostMapping("/image")
     public ResponseEntity<?> upload(@RequestParam("file") MultipartFile file) {
-        if (file.isEmpty()) return ResponseEntity.badRequest().body(Map.of("message", "No file received."));
-        String ct = file.getContentType();
-        if (ct == null || !ct.startsWith("image/"))
-            return ResponseEntity.badRequest().body(Map.of("message", "Only image files are accepted."));
         try {
-            if (cloudinary != null) {
-                @SuppressWarnings("unchecked")
-                Map<String,Object> result = cloudinary.uploader().upload(file.getBytes(),
-                    ObjectUtils.asMap("folder","grafide","resource_type","image"));
-                return ResponseEntity.ok(Map.of("url", result.get("secure_url")));
-            } else {
-                String original = file.getOriginalFilename();
-                String ext = (original != null && original.contains("."))
-                    ? original.substring(original.lastIndexOf('.')) : ".jpg";
-                String filename = UUID.randomUUID() + ext;
-                Path dest = uploadPath.resolve(filename).normalize();
-                if (!dest.startsWith(uploadPath))
-                    return ResponseEntity.badRequest().body(Map.of("message", "Invalid filename."));
-                file.transferTo(dest);
-                String url = ServletUriComponentsBuilder.fromCurrentContextPath()
-                    .path("/api/upload/images/").path(filename).toUriString();
-                return ResponseEntity.ok(Map.of("url", url));
-            }
+            return ResponseEntity.ok(Map.of("url", storeImage(file)));
         } catch (IOException e) {
             log.error("Upload failed: {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("message", "Upload failed: " + e.getMessage()));
         }
+    }
+
+    @PostMapping("/inline-image")
+    public ResponseEntity<?> uploadInlineImage(@RequestParam("file") MultipartFile file) {
+        return upload(file);
     }
 
     @GetMapping("/images/{filename:.+}")
@@ -794,6 +850,7 @@ class SecurityConfig {
                 .requestMatchers("/api/submissions/mine").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/submissions").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/upload/image").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/upload/inline-image").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/submissions/*/resubmit").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/submissions/*/withdraw").authenticated()
                 // Editor only
@@ -899,7 +956,8 @@ class JwtUtil {
 @Data @NoArgsConstructor @Document(collection = "articles")
 class Article {
     @Id private String id;
-    private String title, dek, author, coverImage;
+    private String title, dek, author, videoUrl;
+    private List<String> coverImageUrls = new ArrayList<>();
     @Indexed private String category;
     private List<String> body;
     @Indexed private Instant date;
@@ -911,13 +969,14 @@ class Article {
 @Data @NoArgsConstructor @Document(collection = "submissions")
 class Submission {
     @Id private String id;
-    private String title, dek, category, author, coverImage;
+    private String title, dek, category, author, videoUrl;
+    private List<String> coverImageUrls = new ArrayList<>();
     private List<String> body;
-    @Indexed private String submitterUsername;
-    @Indexed private String status = "pending";
     private String richBody;
     private String note = "";
     private Instant date;
+    private String status;
+    private String submitterUsername;
 }
 
 @Data @NoArgsConstructor @Document(collection = "users")

@@ -13,7 +13,7 @@
   <meta property="og:site_name"   content="Grafide" />
   <meta property="og:title"       content="Grafide — A space dedicated to the art of fashion." />
   <meta property="og:description" content="Grafide — A space dedicated to the art of fashion, culture, and photography." />
-  <meta property="og:image"       content="images/logo.png" />
+  <meta property="og:image"       content="/images/logo.png" />
   <meta property="og:url"         content="" />
 
   <!-- Twitter / X card -->
@@ -21,7 +21,7 @@
   <meta name="twitter:site"        content="@grafide" />
   <meta name="twitter:title"       content="Grafide — A space dedicated to the art of fashion." />
   <meta name="twitter:description" content="Grafide — A space dedicated to the art of fashion, culture, and photography." />
-  <meta name="twitter:image"       content="images/logo.png" />
+  <meta name="twitter:image"       content="/images/logo.png" />
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -43,7 +43,33 @@
 </head>
 <body>
   <div id="app">
-    <header class="header" id="site-header"></header>
+    <section id="article-detail-view" style="display:none;">
+      <div class="article-detail-container">
+        <button id="article-back-btn" class="back-btn" onclick="history.back()">← Back</button>
+        <div id="article-detail-cover-container" class="article-detail-cover"></div>
+        <div class="article-detail-meta">
+          <span id="article-detail-category" class="article-category-tag"></span>
+          <h1 id="article-detail-title"></h1>
+          <p id="article-detail-author" class="article-author"></p>
+        </div>
+        <div id="article-detail-body" class="article-body-content"></div>
+      </div>
+
+      <!-- Related articles below -->
+      <div class="related-articles-section">
+        <h3>More Articles</h3>
+        <div id="related-articles-grid" class="articles-grid"></div>
+      </div>
+    </section>
+    <header class="site-header header" id="site-header">
+      <a class="logo" data-nav="home" href="/" aria-label="Grafide home">
+        <img src="/images/logo.png" alt="Grafide" class="logo-img" />
+      </a>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav id="main-nav" class="main-nav nav"><button class="linklike" data-view="podcast">PODCAST</button></nav>
+    </header>
     <main id="main-content"></main>
     <footer class="footer" id="site-footer"></footer>
   </div>

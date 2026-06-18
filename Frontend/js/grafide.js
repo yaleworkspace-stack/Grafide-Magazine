@@ -60,7 +60,7 @@ const Auth = {
 // CONSTANTS
 // ============================================================
 const BRAND_WORDS = ['Fashion', 'Style', 'Culture', 'Photography', 'Lifestyle'];
-const CATEGORIES  = ['Fashion', 'Lifestyle', 'Photography', 'Culture'];
+const CATEGORIES  = ['Fashion', 'Lifestyle', 'Photography', 'Culture', 'PODCAST'];
 const SITE_DESC   = 'A space dedicated to the art of fashion, culture, and photography.';
 
 // ============================================================
@@ -157,13 +157,65 @@ function initQuill(containerId, initialHtml = '') {
     theme: 'snow',
     placeholder: 'Write your article here…',
     modules: {
-      toolbar: [
-        ['bold', 'italic'],
-        [{ header: [2, 3, false] }],
-        ['blockquote', 'link'],
-        [{ list: 'ordered' }, { list: 'bullet' }],
-        ['clean']
-      ]
+      toolbar: {
+        container: [
+          ['bold', 'italic'],
+          [{ header: [2, 3, false] }],
+          ['blockquote', 'link', 'image'],
+          [{ list: 'ordered' }, { list: 'bullet' }],
+          ['clean']
+        ],
+        handlers: {
+          image: async function() {
+            const input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*');
+            input.style.display = 'none';
+            document.body.appendChild(input);
+
+            input.addEventListener('change', async () => {
+              const file = input.files && input.files[0];
+              if (!file) {
+                document.body.removeChild(input);
+                return;
+              }
+
+              const range = quillEditor.getSelection(true);
+              const formData = new FormData();
+              formData.append('file', file);
+
+              try {
+                const headers = {};
+                if (window.state?.session?.token) {
+                  headers.Authorization = `Bearer ${window.state.session.token}`;
+                }
+
+                const res = await fetch('/api/upload/inline-image', {
+                  method: 'POST',
+                  headers,
+                  body: formData
+                });
+
+                if (!res.ok) {
+                  showToast('Image upload failed.');
+                  return;
+                }
+
+                const data = await res.json();
+                quillEditor.insertEmbed(range.index, 'image', data.url);
+                quillEditor.setSelection(range.index + 1);
+              } catch (error) {
+                console.error('Inline image upload error', error);
+                showToast('Image upload failed.');
+              } finally {
+                document.body.removeChild(input);
+              }
+            }, { once: true });
+
+            input.click();
+          }
+        }
+      }
     }
   });
   if (initialHtml) quillEditor.clipboard.dangerouslyPasteHTML(initialHtml);
@@ -186,6 +238,7 @@ const Render = (() => {
   function header(session, currentView, searchQuery = '') {
     const isEditor = session?.role === 'editor';
     const nb = (view, label) => `<button class="linklike ${currentView===view?'active':''}" data-nav="${view}">${label}</button>`;
+    const podcastButton = `<button class="linklike ${currentView==='podcast'?'active':''}" data-view="podcast">PODCAST</button>`;
     const cats = CATEGORIES.map(c => `<button class="linklike ${currentView==='category-'+c?'active':''}" data-nav="category" data-cat="${c}">${c}</button>`).join('');
     const editorNav = isEditor ? `${nb('review','Review Queue')}${nb('manage','Manage')}${nb('subscribers','Subscribers')}` : '';
     const account = session
@@ -193,9 +246,12 @@ const Render = (() => {
       : `<button class="linklike" data-nav="auth">Sign In / Register</button>`;
     return `
       <a class="logo" data-nav="home" href="/" aria-label="Grafide home">
-        <img src="images/logo.png" alt="Grafide" class="logo-img" />
+        <img src='/images/logo.png' alt="Grafide" class="logo-img" />
       </a>
-      <nav class="nav">${nb('home','Home')}${cats}${session?nb('submit','Submit'):''}${session?nb('mine','My Submissions'):''}${editorNav}</nav>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation menu">
+        <span></span><span></span><span></span>
+      </button>
+      <nav id="main-nav" class="main-nav nav">${nb('home','Home')}${podcastButton}${cats}${session?nb('submit','Submit'):''}${session?nb('mine','My Submissions'):''}${editorNav}</nav>
       <div class="header-right">
         <form class="header-search" id="header-search-form" role="search">
           <input type="search" id="header-search-input" class="header-search-input"
@@ -256,7 +312,7 @@ const Render = (() => {
   }
 
   function card(a) {
-    return `<div class="card" data-nav="article" data-id="${esc(a.id)}"><div class="card-image-wrap"><img src="${esc(a.coverImage)}" alt="${esc(a.title)}" loading="lazy" /></div><span class="card-category">${esc(a.category)}</span><h3 class="card-title">${esc(a.title)}</h3><p class="card-dek">${esc(a.dek)}</p><span class="card-byline">By ${esc(a.author)}</span></div>`;
+    return `<div class="card" onclick="showArticleDetail('${esc(a.id)}')" data-nav="article" data-id="${esc(a.id)}"><div class="card-image-wrap"><img src="${esc(a.coverImage)}" alt="${esc(a.title)}" loading="lazy" /></div><span class="card-category">${esc(a.category)}</span><h3 class="card-title">${esc(a.title)}</h3><p class="card-dek">${esc(a.dek)}</p><span class="card-byline">By ${esc(a.author)}</span></div>`;
   }
 
   // ── Category ─────────────────────────────────────────────
@@ -272,12 +328,13 @@ const Render = (() => {
     const bodyHtml = (a.richBody && a.richBody.trim())
       ? a.richBody
       : (Array.isArray(a.body) ? a.body.map(p=>`<p>${esc(p)}</p>`).join('') : `<p>${esc(a.body??'')}</p>`);
+    const coverSrc = a.coverImage || (Array.isArray(a.coverImageUrls) && a.coverImageUrls.length ? a.coverImageUrls[0] : '');
     const editorControls = isEditor ? `<div class="editor-controls"><button class="button ghost" data-nav="edit-article" data-id="${esc(a.id)}">Edit</button><button class="button ghost delete-article-btn" data-id="${esc(a.id)}" style="border-color:#B23A48;color:#B23A48">Delete</button></div>` : '';
     return `
       <div class="article-page">
-        <button class="back-link" data-nav="home">&#8592; Back to Grafide</button>
+        <button class="back-link" onclick="history.back()">&#8592; Back to Grafide</button>
         ${editorControls}
-        <div class="article-cover"><img src="${esc(a.coverImage)}" alt="${esc(a.title)}" /></div>
+        <div class="article-cover"><img src="${esc(coverSrc)}" alt="${esc(a.title)}" /></div>
         <p class="article-category">${esc(a.category)}</p>
         <h1 class="article-title">${esc(a.title)}</h1>
         <p class="article-dek">${esc(a.dek)}</p>
@@ -285,7 +342,75 @@ const Render = (() => {
         <div class="article-body">${bodyHtml}</div>
       </div>`;
   }
+// Show article detail page
+async function showArticleDetail(articleId) {
+  // Hide all views, show detail view
+  document.querySelectorAll('section[id$="-view"]').forEach(s => s.style.display = 'none');
+  document.getElementById('article-detail-view').style.display = 'block';
 
+  // Push URL state
+  history.pushState({ view: 'article', id: articleId }, '', `/article/${articleId}`);
+
+  try {
+    const res = await fetch(`/api/articles/${articleId}`);
+    const article = await res.json();
+
+    const coverImages = Array.isArray(article.coverImageUrls)
+      ? article.coverImageUrls
+      : (article.coverImage ? [article.coverImage] : []);
+    setupArticleDetailCover(coverImages, article.title);
+    document.getElementById('article-detail-title').textContent = article.title;
+    document.getElementById('article-detail-author').textContent = `By ${article.author || article.authorName || 'Grafide'}`;
+    document.getElementById('article-detail-category').textContent = article.category || '';
+    const bodyEl = document.getElementById('article-detail-body');
+    if (article.richBody && article.richBody.trim()) {
+      bodyEl.innerHTML = article.richBody;
+    } else if (Array.isArray(article.body)) {
+      bodyEl.innerHTML = article.body.map(p => `<p>${esc(p)}</p>`).join('');
+    } else {
+      bodyEl.innerHTML = esc(article.body || '');
+    }
+
+    if (article.videoUrl) {
+      const iframe = document.createElement('iframe');
+      iframe.src = article.videoUrl;
+      iframe.width = '100%';
+      iframe.height = '450';
+      iframe.frameBorder = '0';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      iframe.allowFullscreen = true;
+      iframe.style.display = 'block';
+      iframe.style.marginTop = '24px';
+      bodyEl.appendChild(iframe);
+    }
+
+    // Load related articles (same category)
+    loadRelatedArticles(article.category, articleId);
+  } catch (err) {
+    console.error('Failed to load article', err);
+  }
+}
+
+// Load related articles by category
+async function loadRelatedArticles(category, excludeId) {
+  try {
+    const res = await fetch(`/api/articles?category=${encodeURIComponent(category)}`);
+    const articles = await res.json();
+    const grid = document.getElementById('related-articles-grid');
+    grid.innerHTML = '';
+
+    const related = (articles.content || articles)
+      .filter(a => a.id !== excludeId)
+      .slice(0, 4);
+
+    related.forEach(a => {
+      const card = buildArticleCard(a); // reuse your existing card builder
+      grid.appendChild(card);
+    });
+  } catch (err) {
+    console.error('Failed to load related articles', err);
+  }
+}
   // ── Auth ─────────────────────────────────────────────────
   function auth(mode = 'signin', error = '') {
     const isSignIn = mode === 'signin';
@@ -369,9 +494,10 @@ const Render = (() => {
         <form id="submit-form" novalidate>
           <div class="field"><label>Title</label><input id="f-title" type="text" /></div>
           <div class="field"><label>Category</label><select id="f-category">${catOpts}</select></div>
+          <div class="field" id="video-url-field" style="display:none"><label>Video URL</label><input id="f-video-url" type="url" placeholder="https://youtube.com/embed/... or https://player.vimeo.com/video/..." /></div>
           <div class="field"><label>Short Description</label><input id="f-dek" type="text" /></div>
           <div class="field"><label>Cover Image URL</label><input id="f-cover" type="text" placeholder="https://…" /></div>
-          <div class="field"><label>Or upload a cover image</label><input id="f-cover-file" type="file" accept="image/*" /><img id="cover-preview" class="image-preview" style="display:none" alt="" /></div>
+          <div class="field"><label>Or upload cover images</label><input id="f-cover-file" type="file" accept="image/*" multiple /><div id="image-preview-strip" class="image-preview-strip"></div></div>
           <div class="field"><label>Article Text</label><div id="quill-container" class="quill-editor"></div></div>
           ${error?`<p class="error-text">${esc(error)}</p>`:''}
           <button class="button" type="submit">Submit Piece</button>
@@ -445,7 +571,7 @@ const Render = (() => {
     const bodyHtml = (s.richBody && s.richBody.trim()) ? s.richBody : paras;
     return `
       <div class="review-preview">
-        ${s.coverImage?`<img src="${esc(s.coverImage)}" class="image-preview" alt="" />`:''}
+        ${((s.coverImage || (Array.isArray(s.coverImageUrls) && s.coverImageUrls.length)) ? `<img src="${esc(s.coverImage || s.coverImageUrls[0])}" class="image-preview" alt="" />` : '')}
         <p class="article-dek" style="margin-top:14px">${esc(s.dek)}</p>
         <div class="article-body" style="margin-top:14px">${bodyHtml}</div>
       </div>
@@ -492,7 +618,8 @@ const Render = (() => {
           <div class="field"><label>Title</label><input id="f-edit-title" type="text" value="${esc(a.title)}" /></div>
           <div class="field"><label>Category</label><select id="f-edit-category">${catOpts}</select></div>
           <div class="field"><label>Short Description</label><input id="f-edit-dek" type="text" value="${esc(a.dek)}" /></div>
-          <div class="field"><label>Cover Image URL</label><input id="f-edit-cover" type="text" value="${esc(a.coverImage||'')}" /></div>
+          <div class="field"><label>Cover Image URL</label><input id="f-edit-cover" type="text" value="${esc(a.coverImage || (Array.isArray(a.coverImageUrls) && a.coverImageUrls.length ? a.coverImageUrls[0] : ''))}" /></div>
+          <div class="field" id="video-url-field" style="display:none"><label>Video URL</label><input id="f-edit-video-url" type="url" value="${esc(a.videoUrl||'')}" placeholder="https://youtube.com/embed/... or https://player.vimeo.com/video/..." /></div>
           <div class="field"><label>Article Text</label><div id="quill-container" class="quill-editor"></div></div>
           ${error?`<p class="error-text">${esc(error)}</p>`:''}
           <div style="display:flex;gap:12px;flex-wrap:wrap">
@@ -661,10 +788,14 @@ const Render = (() => {
 
   // ── Handlers ─────────────────────────────────────────────
   function handleNavClick(e) {
-    const el = e.target.closest('[data-nav]');
+    const el = e.target.closest('[data-nav],[data-view]');
     if (!el) return;
     e.preventDefault();
-    navigate({ name: el.dataset.nav, id: el.dataset.id, cat: el.dataset.cat });
+    const viewName = el.dataset.nav || el.dataset.view;
+    const navObj = viewName === 'podcast'
+      ? { name: 'category', cat: 'PODCAST' }
+      : { name: viewName, id: el.dataset.id, cat: el.dataset.cat };
+    navigate(navObj);
   }
 
   async function handleAuth(e) {
@@ -703,27 +834,107 @@ const Render = (() => {
     catch (err) { state._resetError = err.message; paint(); }
   }
 
+  let selectedImages = [];
+
   function handleCoverPreview(e) {
-    const file = e.target.files?.[0]; if (!file) return;
-    const p = document.getElementById('cover-preview'); if (p) { p.src = URL.createObjectURL(file); p.style.display = 'block'; }
+    selectedImages = Array.from(e.target.files || []);
+    renderImagePreviewStrip();
   }
 
+  function renderImagePreviewStrip() {
+    const strip = document.getElementById('image-preview-strip');
+    if (!strip) return;
+    strip.innerHTML = selectedImages.map((file, idx) => {
+      const url = URL.createObjectURL(file);
+      return `
+        <div class="preview-thumb ${idx===0?'primary':''}" data-index="${idx}">
+          <img src="${url}" alt="Selected image ${idx+1}" />
+          <button type="button" class="preview-remove" data-index="${idx}" aria-label="Remove image ${idx+1}">×</button>
+          ${idx===0?`<span class="preview-label">Primary</span>`:''}
+        </div>`;
+    }).join('');
+  }
+
+  function setupArticleDetailCover(imageUrls, title) {
+    const container = document.getElementById('article-detail-cover-container');
+    if (!container) return;
+    const images = (Array.isArray(imageUrls) ? imageUrls : []).filter(Boolean);
+    if (!images.length) {
+      container.innerHTML = '<div class="article-detail-cover-fallback">No cover image available.</div>';
+      return;
+    }
+    const hasMultiple = images.length > 1;
+    container.innerHTML = `
+      <div class="detail-slideshow" data-index="0">
+        <div class="slideshow-frame">
+          <img class="detail-slideshow-image" src="${esc(images[0])}" alt="${esc(title)}" />
+          ${hasMultiple ? `<button type="button" class="slideshow-control prev" aria-label="Previous image">&#10094;</button>
+            <button type="button" class="slideshow-control next" aria-label="Next image">&#10095;</button>` : ''}
+        </div>
+        ${hasMultiple ? `<div class="slideshow-thumbs">
+          ${images.map((src, idx) => `<button type="button" class="slideshow-thumb${idx===0?' active':''}" data-index="${idx}" aria-label="Show image ${idx+1}"><img src="${esc(src)}" alt="${esc(title)} cover ${idx+1}" /></button>`).join('')}
+        </div>` : ''}
+      </div>`;
+    if (!hasMultiple) return;
+    const imageEl = container.querySelector('.detail-slideshow-image');
+    const thumbButtons = Array.from(container.querySelectorAll('.slideshow-thumb'));
+    const prevBtn = container.querySelector('.slideshow-control.prev');
+    const nextBtn = container.querySelector('.slideshow-control.next');
+    let current = 0;
+    const setIndex = idx => {
+      current = (idx + images.length) % images.length;
+      imageEl.src = images[current];
+      thumbButtons.forEach(btn => btn.classList.toggle('active', Number(btn.dataset.index) === current));
+    };
+    prevBtn?.addEventListener('click', () => setIndex(current - 1));
+    nextBtn?.addEventListener('click', () => setIndex(current + 1));
+    thumbButtons.forEach(btn => btn.addEventListener('click', () => setIndex(Number(btn.dataset.index))));
+  }
+
+  function removeSelectedImage(index) {
+    selectedImages = selectedImages.filter((_, idx) => idx !== index);
+    renderImagePreviewStrip();
+  }
+  function toggleVideoUrlField(selectId, fieldId = 'video-url-field') {
+    const select = document.getElementById(selectId);
+    const field = document.getElementById(fieldId);
+    if (!select || !field) return;
+    field.style.display = select.value === 'PODCAST' ? 'block' : 'none';
+  }
   async function handleSubmit(e) {
     e.preventDefault();
-    const title   = document.getElementById('f-title')?.value.trim();
-    const dek     = document.getElementById('f-dek')?.value.trim();
-    const cat     = document.getElementById('f-category')?.value;
-    const cover   = document.getElementById('f-cover')?.value.trim();
+    const title    = document.getElementById('f-title')?.value.trim();
+    const dek      = document.getElementById('f-dek')?.value.trim();
+    const cat      = document.getElementById('f-category')?.value;
+    const cover    = document.getElementById('f-cover')?.value.trim();
+    const videoUrl = document.getElementById('f-video-url')?.value?.trim() || '';
     const richBody = getQuillHtml();
-    const fileInput = document.getElementById('f-cover-file');
     if (!title || !dek || !richBody) { state._submitError = 'Title, description, and article text are required.'; paint(); return; }
-    let coverImage = cover;
-    if (fileInput?.files?.length > 0) {
-      const fd = new FormData(); fd.append('file', fileInput.files[0]);
-      try { const res = await fetch('/api/upload/image', { method:'POST', headers:{'Authorization':`Bearer ${state.session.token}`}, body: fd }); if (res.ok) { const d = await res.json(); coverImage = d.url; } } catch {}
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('dek', dek);
+    formData.append('category', cat);
+    formData.append('richBody', richBody);
+    formData.append('videoUrl', videoUrl);
+    if (cover) formData.append('coverImage', cover);
+    selectedImages.forEach(file => formData.append('images', file));
+    try {
+      const res = await fetch('/api/submissions', {
+        method: 'POST',
+        headers: state.session?.token ? { 'Authorization': `Bearer ${state.session.token}` } : undefined,
+        body: formData
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Submission failed.');
+      }
+      state.submitSuccess = true;
+      selectedImages = [];
+      paint();
+    } catch (err) {
+      state._submitError = err.message;
+      paint();
     }
-    try { await Submissions.create({ title, dek, category: cat, richBody, coverImage }, state.session.token); state.submitSuccess = true; paint(); }
-    catch (err) { state._submitError = err.message; paint(); }
   }
 
   async function handleResubmit(e) {
@@ -798,9 +1009,10 @@ const Render = (() => {
     const dek      = document.getElementById('f-edit-dek')?.value.trim();
     const cat      = document.getElementById('f-edit-category')?.value;
     const cover    = document.getElementById('f-edit-cover')?.value.trim();
+    const videoUrl = document.getElementById('f-edit-video-url')?.value?.trim() || '';
     const richBody = getQuillHtml();
     if (!title || !dek || !richBody) { state._editError = 'All fields required.'; paint(); return; }
-    try { await Articles.update(id, { title, dek, category: cat, coverImage: cover, richBody }, state.session.token); showToast('Article updated.'); state.articles = null; navigate({ name: 'manage' }); }
+    try { await Articles.update(id, { title, dek, category: cat, coverImage: cover, videoUrl, richBody }, state.session.token); showToast('Article updated.'); state.articles = null; navigate({ name: 'manage' }); }
     catch (err) { state._editError = err.message; paint(); }
   }
   async function handleSubscribe() {
@@ -814,12 +1026,26 @@ const Render = (() => {
   // ── Bind Events ──────────────────────────────────────────
   function bindEvents() {
     $header.addEventListener('click', handleNavClick);
+    document.getElementById('nav-toggle')?.addEventListener('click', () => {
+      document.getElementById('main-nav')?.classList.toggle('open');
+    });
+    document.querySelectorAll('#main-nav [data-nav], #main-nav [data-view]').forEach(link => {
+      link.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          document.getElementById('main-nav')?.classList.remove('open');
+        }
+      });
+    });
 
     document.getElementById('header-search-form')?.addEventListener('submit', e => {
       e.preventDefault();
       const q = document.getElementById('header-search-input')?.value.trim();
       if (q) navigate({ name: 'search', q });
     });
+    document.getElementById('f-category')?.addEventListener('change', () => toggleVideoUrlField('f-category'));
+    document.getElementById('f-edit-category')?.addEventListener('change', () => toggleVideoUrlField('f-edit-category', 'video-url-field'));
+    toggleVideoUrlField('f-category');
+    toggleVideoUrlField('f-edit-category', 'video-url-field');
 
     document.getElementById('signout-btn')?.addEventListener('click', () => {
       localStorage.removeItem('grafide_session'); state.session = null; state.articles = null; navigate({ name: 'home' });
@@ -851,6 +1077,12 @@ const Render = (() => {
     document.getElementById('forgot-form')?.addEventListener('submit', handleForgotPassword);
     document.getElementById('reset-form')?.addEventListener('submit', handleResetPassword);
     document.getElementById('f-cover-file')?.addEventListener('change', handleCoverPreview);
+    document.getElementById('image-preview-strip')?.addEventListener('click', e => {
+      const btn = e.target.closest('.preview-remove');
+      if (!btn) return;
+      const index = Number(btn.dataset.index);
+      if (!Number.isNaN(index)) removeSelectedImage(index);
+    });
     document.getElementById('submit-form')?.addEventListener('submit', handleSubmit);
     document.getElementById('resubmit-form')?.addEventListener('submit', handleResubmit);
     document.getElementById('edit-article-form')?.addEventListener('submit', handleEditArticle);
