@@ -193,7 +193,7 @@ const Render = (() => {
       : `<button class="linklike" data-nav="auth">Sign In / Register</button>`;
     return `
       <a class="logo" data-nav="home" href="/" aria-label="Grafide home">
-        <img src="/images/grafide_logo.jpg" alt="Grafide" class="logo-img" />
+        <img src="images/logo.png" alt="Grafide" class="logo-img" />
       </a>
       <nav class="nav">${nb('home','Home')}${cats}${session?nb('submit','Submit'):''}${session?nb('mine','My Submissions'):''}${editorNav}</nav>
       <div class="header-right">
@@ -228,9 +228,9 @@ const Render = (() => {
       <div class="footer-bottom">
         <div class="tagline">${BRAND_WORDS.map(w=>`<span>${w}</span>`).join('<span class="diamond" style="opacity:.4"></span>')}</div>
         <div class="social-links">
-          <a href="https://instagram.com/grafide" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">${ig}</a>
-          <a href="https://x.com/grafide"         target="_blank" rel="noopener" class="social-link" aria-label="X">${x}</a>
-          <a href="https://pinterest.com/grafide" target="_blank" rel="noopener" class="social-link" aria-label="Pinterest">${pin}</a>
+          <a href="https://www.instagram.com/grafidemagazines" target="_blank" rel="noopener" class="social-link" aria-label="Instagram">${ig}</a>
+          <a href="https://x.com/grafidemagazine" target="_blank" rel="noopener" class="social-link" aria-label="X">${x}</a>
+          <a href="https://www.pinterest.com/GrafideMagazines" target="_blank" rel="noopener" class="social-link" aria-label="Pinterest">${pin}</a>
         </div>
         <p class="copyright">&copy; ${new Date().getFullYear()} Grafide</p>
       </div>`;

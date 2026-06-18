@@ -23,8 +23,10 @@ Grafide Magazines (website)/
 │       └── grafide.js
 ├── uploads/
 │   └── images/              # image uploads served by backend
+├── docker-compose.yml
 ├── Dockerfile
 └── README.md
+
 ```
 
 ## What this project contains
