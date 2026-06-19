@@ -45,7 +45,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
@@ -54,6 +53,8 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.http.HttpServletRequest;
@@ -78,29 +79,34 @@ import java.util.stream.Collectors;
 // ============================================================
 @SpringBootApplication
 public class GrafideApplication {
+
     public static void main(String[] args) {
         SpringApplication.run(GrafideApplication.class, args);
     }
-}
 
-// ============================================================
-// SPA CONTROLLER — forward all clean URLs to index.html
-// so /article/123 works on refresh or when shared as a link
-// ============================================================
-@Controller
-class SpaController {
-    @GetMapping(value = {"/article/**", "/category/**", "/submit", "/auth",
-                         "/mine", "/review", "/manage", "/subscribers",
-                         "/edit-article/**", "/resubmit/**", "/search", "/forgot-password", "/reset-password"})
-    public String forward() {
-        return "forward:/index.html";
+    @Bean
+    public WebMvcConfigurer staticFrontendConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                registry.addResourceHandler("/**")
+                        .addResourceLocations("file:../Frontend/")
+                        .resourceChain(true)
+                        .addResolver(new org.springframework.web.servlet.resource.PathResourceResolver() {
+                            @Override
+                            protected Resource getResource(String resourcePath, Resource location) throws IOException {
+                                Resource requested = location.createRelative(resourcePath);
+                                if (requested.exists() && requested.isReadable()) return requested;
+                                return new org.springframework.core.io.FileSystemResource("../Frontend/index.html");
+                            }
+                        });
+            }
+        };
     }
 }
 
 // ============================================================
 // HEALTH CHECK — GET /api/health
-// First thing to hit when debugging a 500: tells you if
-// the app is up and whether MongoDB is actually reachable.
 // ============================================================
 @RestController
 @RequestMapping("/api")
@@ -127,8 +133,6 @@ class HealthController {
 
 // ============================================================
 // GLOBAL EXCEPTION HANDLER
-// Without this every unhandled exception returns a generic
-// 500 with no useful body. Now you always get JSON + a reason.
 // ============================================================
 @RestControllerAdvice
 @Slf4j
@@ -149,6 +153,12 @@ class GlobalExceptionHandler {
             "detail", ex.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<?> handleNoResource(org.springframework.web.servlet.resource.NoResourceFoundException ex) {
+        // Let Spring handle static resource 404s normally rather than wrapping in JSON
+        return ResponseEntity.notFound().build();
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleAll(Exception ex, HttpServletRequest req) {
         log.error("Unhandled error on {}: {}", req.getRequestURI(), ex.getMessage(), ex);
@@ -159,9 +169,6 @@ class GlobalExceptionHandler {
 
 // ============================================================
 // LOGIN RATE LIMITER
-// Simple in-memory sliding window: 10 attempts per 15 minutes
-// per username. Single-instance safe (ConcurrentHashMap +
-// synchronized block). Good enough for this scale.
 // ============================================================
 @Component
 class LoginRateLimiter {
@@ -193,8 +200,6 @@ class LoginRateLimiter {
 class ArticleController {
     private final ArticleRepository articleRepo;
 
-    // One-time startup migration: any article without a 'published'
-    // field (written before this field existed) gets it set to true.
     @PostConstruct
     void migrate() {
         seed();
@@ -206,12 +211,7 @@ class ArticleController {
             log.info("Migrated {} legacy articles to published=true", legacy.size());
         }
     }
-@GetMapping("/api/articles/{id}")
-public ResponseEntity<Article> getArticle(@PathVariable String id) {
-    return articleRepo.findById(id)
-        .map(ResponseEntity::ok)
-        .orElse(ResponseEntity.notFound().build());
-}
+
     // GET /api/articles?category=X&page=0&size=12
     @GetMapping
     public Map<String, Object> list(
@@ -226,7 +226,6 @@ public ResponseEntity<Article> getArticle(@PathVariable String id) {
 
         List<Article> articles = new ArrayList<>(result.getContent());
 
-        // On first page with no category filter, ensure pinned article is always first
         if (page == 0 && (category == null || category.isBlank())) {
             articleRepo.findFirstPinned().ifPresent(pinned -> {
                 articles.removeIf(a -> a.getId().equals(pinned.getId()));
@@ -249,26 +248,24 @@ public ResponseEntity<Article> getArticle(@PathVariable String id) {
             .orElse(ResponseEntity.status(404).body(Map.of("message", "Article not found.")));
     }
 
-    // Editor: edit a published article
     @PutMapping("/{id}")
     public ResponseEntity<?> update(@PathVariable String id, @RequestBody ArticleUpdateRequest req) {
         Article a = articleRepo.findById(id).orElse(null);
         if (a == null) return ResponseEntity.notFound().build();
-        if (req.getTitle()      != null && !req.getTitle().isBlank())    a.setTitle(req.getTitle());
-        if (req.getDek()        != null)                                  a.setDek(req.getDek());
-        if (req.getCategory()   != null && !req.getCategory().isBlank()) a.setCategory(req.getCategory());
+        if (req.getTitle()    != null && !req.getTitle().isBlank())    a.setTitle(req.getTitle());
+        if (req.getDek()      != null)                                  a.setDek(req.getDek());
+        if (req.getCategory() != null && !req.getCategory().isBlank()) a.setCategory(req.getCategory());
         if (req.getCoverImageUrls() != null && !req.getCoverImageUrls().isEmpty()) {
             a.setCoverImageUrls(req.getCoverImageUrls());
         } else if (req.getCoverImage() != null && !req.getCoverImage().isBlank()) {
             a.setCoverImageUrls(List.of(req.getCoverImage().trim()));
         }
-        if (req.getBody()       != null && !req.getBody().isEmpty())      a.setBody(req.getBody());
-        if (req.getVideoUrl()   != null)                                 a.setVideoUrl(req.getVideoUrl());
+        if (req.getBody()     != null && !req.getBody().isEmpty())     a.setBody(req.getBody());
+        if (req.getVideoUrl() != null)                                 a.setVideoUrl(req.getVideoUrl());
         articleRepo.save(a);
         return ResponseEntity.ok(Map.of("status", "updated"));
     }
 
-    // Editor: delete an article
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable String id) {
         if (!articleRepo.existsById(id)) return ResponseEntity.notFound().build();
@@ -276,7 +273,6 @@ public ResponseEntity<Article> getArticle(@PathVariable String id) {
         return ResponseEntity.noContent().build();
     }
 
-    // Editor: pin an article as cover story (unpins all others first)
     @PutMapping("/{id}/pin")
     public ResponseEntity<?> pin(@PathVariable String id) {
         Article target = articleRepo.findById(id).orElse(null);
@@ -289,7 +285,6 @@ public ResponseEntity<Article> getArticle(@PathVariable String id) {
         return ResponseEntity.ok(Map.of("status", "pinned", "id", id));
     }
 
-    // Editor: unpin (revert cover story to chronological order)
     @PutMapping("/{id}/unpin")
     public ResponseEntity<?> unpin(@PathVariable String id) {
         Article a = articleRepo.findById(id).orElse(null);
@@ -299,18 +294,16 @@ public ResponseEntity<Article> getArticle(@PathVariable String id) {
         return ResponseEntity.ok(Map.of("status", "unpinned", "id", id));
     }
 
-    // Editor: temporarily hide an article without deleting it
     @PutMapping("/{id}/unpublish")
     public ResponseEntity<?> unpublish(@PathVariable String id) {
         Article a = articleRepo.findById(id).orElse(null);
         if (a == null) return ResponseEntity.notFound().build();
         a.setPublished(false);
-        a.setPinned(false); // can't be cover story while hidden
+        a.setPinned(false);
         articleRepo.save(a);
         return ResponseEntity.ok(Map.of("status", "unpublished", "id", id));
     }
 
-    // Editor: bring a hidden article back
     @PutMapping("/{id}/republish")
     public ResponseEntity<?> republish(@PathVariable String id) {
         Article a = articleRepo.findById(id).orElse(null);
@@ -323,7 +316,6 @@ public ResponseEntity<Article> getArticle(@PathVariable String id) {
     @GetMapping("/search")
     public List<Map<String, Object>> search(@RequestParam(defaultValue = "") String q) {
         if (q.isBlank() || q.length() < 2) return List.of();
-        // Escape regex metacharacters to prevent injection
         String safe = q.trim().replaceAll("[\\[\\]{}()*+?.,\\\\^$|#]", "\\\\$0");
         return articleRepo.searchVisible(safe, Sort.by(Sort.Direction.DESC, "date"))
             .stream().map(this::toSummary).toList();
@@ -444,13 +436,12 @@ class AuthController {
         @NotBlank @Size(min=3,max=30) String username;
         @NotBlank @Size(min=6)        String password;
         @NotBlank                     String displayName;
-        @Email String email;         // optional
+        @Email String email;
         String editorCode = "";
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req) {
-        // Rate limit by username
         if (!rateLimiter.isAllowed(req.getUsername())) {
             return ResponseEntity.status(429)
                 .body(Map.of("message", "Too many login attempts. Please wait 15 minutes before trying again."));
@@ -460,7 +451,7 @@ class AuthController {
             return ResponseEntity.status(401)
                 .body(Map.of("message", "That username and password combination doesn't match an account."));
         }
-        rateLimiter.reset(req.getUsername()); // clear counter on successful login
+        rateLimiter.reset(req.getUsername());
         log.info("Login: {}", user.getUsername());
         return ResponseEntity.ok(Map.of(
             "token",       jwtUtil.generateToken(user.getUsername(), user.getRole()),
@@ -498,11 +489,9 @@ class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
         User user = userRepo.findByUsername(req.getUsername()).orElse(null);
-        // Always return same message — never reveal whether username exists
         String genericOk = "If that username exists and has an email on file, a reset link has been sent. If email is not configured, check the server logs.";
         if (user != null) {
             if (user.getEmail() == null || user.getEmail().isBlank()) {
-                // No email stored — log link regardless so admin can relay it
                 processReset(user, true);
             } else {
                 processReset(user, false);
@@ -568,7 +557,7 @@ class SubmissionController {
     private final UserRepository userRepo;
     private final UploadController uploadController;
 
-    private static final Set<String> VALID_CATEGORIES = Set.of("Fashion", "Lifestyle", "Photography", "Culture","Podcast");
+    private static final Set<String> VALID_CATEGORIES = Set.of("Fashion", "Lifestyle", "Photography", "Culture", "Podcast");
 
     private ResponseEntity<?> validateCategory(String category) {
         if (!VALID_CATEGORIES.contains(category)) {
@@ -642,7 +631,6 @@ class SubmissionController {
             .orElse(ResponseEntity.status(404).body(Map.of("message", "Not found.")));
     }
 
-    // Creator: edit and resubmit a returned piece
     @PutMapping("/{id}/resubmit")
     public ResponseEntity<?> resubmit(
         @PathVariable String id,
@@ -672,7 +660,6 @@ class SubmissionController {
         return ResponseEntity.ok(Map.of("status", "pending"));
     }
 
-    // Creator: withdraw a pending submission before it is reviewed
     @DeleteMapping("/{id}/withdraw")
     public ResponseEntity<?> withdraw(@PathVariable String id, @AuthenticationPrincipal String username) {
         Submission s = submissionRepo.findById(id).orElse(null);
@@ -687,7 +674,6 @@ class SubmissionController {
         return ResponseEntity.noContent().build();
     }
 
-    // Editor: approve → publishes as article
     @PutMapping("/{id}/approve")
     public ResponseEntity<?> approve(@PathVariable String id) {
         Submission s = submissionRepo.findById(id).orElse(null);
@@ -708,7 +694,6 @@ class SubmissionController {
         return ResponseEntity.ok(Map.of("status", "published"));
     }
 
-    // Editor: return to creator with optional note
     @PutMapping("/{id}/return")
     public ResponseEntity<?> returnToCreator(@PathVariable String id, @RequestBody ReturnRequest req) {
         Submission s = submissionRepo.findById(id).orElse(null);
@@ -750,8 +735,6 @@ class SubscriberController {
 
 // ============================================================
 // UPLOAD CONTROLLER
-// Cloudinary in production (set CLOUDINARY_URL on Render),
-// local disk in development.
 // ============================================================
 @RestController
 @RequestMapping("/api/upload")
@@ -846,20 +829,17 @@ class SecurityConfig {
             .cors(c -> c.configurationSource(corsSource()))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Creator (authenticated)
                 .requestMatchers("/api/submissions/mine").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/submissions").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/upload/image").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/upload/inline-image").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/api/submissions/*/resubmit").authenticated()
                 .requestMatchers(HttpMethod.DELETE, "/api/submissions/*/withdraw").authenticated()
-                // Editor only
                 .requestMatchers("/api/submissions/queue").hasRole("EDITOR")
                 .requestMatchers(HttpMethod.PUT,    "/api/submissions/**").hasRole("EDITOR")
                 .requestMatchers(HttpMethod.PUT,    "/api/articles/**").hasRole("EDITOR")
                 .requestMatchers(HttpMethod.DELETE, "/api/articles/**").hasRole("EDITOR")
                 .requestMatchers(HttpMethod.GET,    "/api/subscribers").hasRole("EDITOR")
-                // Everything else public
                 .anyRequest().permitAll()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -919,8 +899,6 @@ class JwtUtil {
 
     public JwtUtil(@Value("${jwt.secret}") String secret,
                    @Value("${jwt.expiration-ms}") long expirationMs) {
-        // SHA-256 hash ensures key is always exactly 256 bits — no WeakKeyException
-        // regardless of how short or long the JWT_SECRET env var is.
         try {
             byte[] hash = MessageDigest.getInstance("SHA-256").digest(secret.getBytes(StandardCharsets.UTF_8));
             this.key = Keys.hmacShaKeyFor(hash);
@@ -933,12 +911,12 @@ class JwtUtil {
 
     public String generateToken(String username, String role) {
         return Jwts.builder()
-      .subject(username)
-      .claim("role", role)
-      .issuedAt(new Date())
-      .expiration(new Date(System.currentTimeMillis() + expirationMs))
-      .signWith(key)
-      .compact();
+            .subject(username)
+            .claim("role", role)
+            .issuedAt(new Date())
+            .expiration(new Date(System.currentTimeMillis() + expirationMs))
+            .signWith(key)
+            .compact();
     }
     public Claims parseToken(String token) {
         return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
@@ -962,8 +940,8 @@ class Article {
     private List<String> body;
     @Indexed private Instant date;
     private boolean pinned = false;
-    private String richBody; // HTML from Quill editor (null = legacy plain-text article)
-    private Boolean published = true; // Boolean (boxed) so null = legacy doc (treated as true)
+    private String richBody;
+    private Boolean published = true;
 }
 
 @Data @NoArgsConstructor @Document(collection = "submissions")
@@ -984,7 +962,7 @@ class User {
     @Id private String id;
     @Indexed(unique = true) private String username;
     private String passwordHash, displayName;
-    private String email; // optional — used for password reset
+    private String email;
     private String role = "creator";
 }
 
@@ -999,19 +977,16 @@ class Subscriber {
 // REPOSITORIES
 // ============================================================
 interface ArticleRepository extends MongoRepository<Article, String> {
-    // Paginated queries — null published treated as true (backward compat)
     @Query("{ '$or': [{'published': true}, {'published': {'$exists': false}}] }")
     Page<Article> findAllVisible(Pageable pageable);
 
     @Query("{ 'category': ?0, '$or': [{'published': true}, {'published': {'$exists': false}}] }")
     Page<Article> findVisibleByCategory(String category, Pageable pageable);
 
-    // Pinned article for cover story logic
     @Query(value = "{ 'pinned': true, '$or': [{'published': true}, {'published': {'$exists': false}}] }",
            sort  = "{ 'date': -1 }")
     Optional<Article> findFirstPinned();
 
-    // Used for manage page (shows all incl. unpublished) and for migrations
     List<Article> findAllByOrderByDateDesc();
 
     @Query("{ '$and': [ { '$or': [{'published': true}, {'published': {'$exists': false}}] }, { '$or': [{'title': {'$regex': ?0, '$options': 'i'}}, {'dek': {'$regex': ?0, '$options': 'i'}}, {'author': {'$regex': ?0, '$options': 'i'}}, {'category': {'$regex': ?0, '$options': 'i'}}] } ] }")
