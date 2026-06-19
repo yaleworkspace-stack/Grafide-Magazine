@@ -83,17 +83,21 @@ public class GrafideApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(GrafideApplication.class, args);
-    } 
-@Profile("!prod")
-@Bean
-public WebMvcConfigurer staticFrontendConfigurer() {
-    return new WebMvcConfigurer() {
-        @Override
-        public void addResourceHandlers(ResourceHandlerRegistry registry) {
-            registry.addResourceHandler("/**")
-                    .addResourceLocations("file:../Frontend/");
-        }
-};
+    }
+
+    // Active only under the "local" profile (native Windows dev).
+    // In the "prod" profile (Docker / Render) the frontend is a separate
+    // Static Site and Spring does not serve any static files at all.
+    @Profile("local")
+    @Bean
+    public WebMvcConfigurer staticFrontendConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addResourceHandlers(ResourceHandlerRegistry registry) {
+                registry.addResourceHandler("/**")
+                        .addResourceLocations("file:../Frontend/");
+            }
+        };
     }
 }
 // ============================================================
@@ -163,13 +167,17 @@ class GlobalExceptionHandler {
 // ============================================================
 @Component
 class LoginRateLimiter {
+    // CopyOnWriteArrayList is thread-safe for the read-heavy, occasional-write
+    // access pattern of a rate-limit window. The outer ConcurrentHashMap prevents
+    // races on key insertion. Both locks are still held by the synchronized methods
+    // to make the check-then-act sequence atomic within a single JVM instance.
     private final ConcurrentHashMap<String, List<Long>> windows = new ConcurrentHashMap<>();
     private static final int  MAX_ATTEMPTS = 10;
     private static final long WINDOW_MS    = 15 * 60 * 1000L;
 
     public synchronized boolean isAllowed(String key) {
         long now = System.currentTimeMillis();
-        List<Long> times = windows.computeIfAbsent(key, k -> new ArrayList<>());
+        List<Long> times = windows.computeIfAbsent(key, k -> new java.util.concurrent.CopyOnWriteArrayList<>());
         times.removeIf(t -> now - t > WINDOW_MS);
         if (times.size() >= MAX_ATTEMPTS) return false;
         times.add(now);
@@ -246,11 +254,21 @@ class ArticleController {
         if (req.getTitle()    != null && !req.getTitle().isBlank())    a.setTitle(req.getTitle());
         if (req.getDek()      != null)                                  a.setDek(req.getDek());
         if (req.getCategory() != null && !req.getCategory().isBlank()) a.setCategory(req.getCategory());
+        // Only overwrite cover images if the request actually supplies new ones.
+        // An absent or empty image payload is treated as "leave existing images intact"
+        // — this prevents a text-only edit from silently destroying the cover image links.
         if (req.getCoverImageUrls() != null && !req.getCoverImageUrls().isEmpty()) {
             a.setCoverImageUrls(req.getCoverImageUrls());
         } else if (req.getCoverImage() != null && !req.getCoverImage().isBlank()) {
-            a.setCoverImageUrls(List.of(req.getCoverImage().trim()));
+            // Single URL convenience field — merge as a one-element list only if
+            // the article currently has no images, or the editor explicitly changed it.
+            List<String> existing = a.getCoverImageUrls();
+            if (existing == null || existing.isEmpty()
+                    || !req.getCoverImage().trim().equals(existing.get(0))) {
+                a.setCoverImageUrls(List.of(req.getCoverImage().trim()));
+            }
         }
+        // If neither field is present, coverImageUrls is left untouched.
         if (req.getBody()     != null && !req.getBody().isEmpty())     a.setBody(req.getBody());
         if (req.getVideoUrl() != null)                                 a.setVideoUrl(req.getVideoUrl());
         articleRepo.save(a);
@@ -307,7 +325,9 @@ class ArticleController {
     @GetMapping("/search")
     public List<Map<String, Object>> search(@RequestParam(defaultValue = "") String q) {
         if (q.isBlank() || q.length() < 2) return List.of();
-        String safe = q.trim().replaceAll("[\\[\\]{}()*+?.,\\\\^$|#]", "\\\\$0");
+        // Pattern.quote() wraps the input in \Q...\E so no regex meta-characters
+        // can escape into the MongoDB regex engine — eliminates the ReDoS vector.
+        String safe = java.util.regex.Pattern.quote(q.trim());
         return articleRepo.searchVisible(safe, Sort.by(Sort.Direction.DESC, "date"))
             .stream().map(this::toSummary).toList();
     }
@@ -371,23 +391,22 @@ class ArticleController {
         log.info("Seeded {} articles.", seeds.size());
     }
 
-    private Map<String, Object> toSummary(Article a) {
-        String cover = "";
-        if (a.getCoverImageUrls() != null && !a.getCoverImageUrls().isEmpty()) {
-            cover = a.getCoverImageUrls().get(0);
-        }
-        return Map.of(
-            "id",         a.getId(),
-            "title",      a.getTitle(),
-            "dek",        a.getDek(),
-            "category",   a.getCategory(),
-            "author",     a.getAuthor(),
-            "coverImage", cover,
-            "date",       a.getDate().toString(),
-            "pinned",     a.isPinned(),
-            "published",  Boolean.TRUE.equals(a.getPublished())
-        );
-    }
+  private Map<String, Object> toSummary(Article a) {
+    List<String> covers = a.getCoverImageUrls() != null ? a.getCoverImageUrls() : List.of();
+    String cover = covers.isEmpty() ? "" : covers.get(0);
+    Map<String, Object> map = new HashMap<>();
+    map.put("id", a.getId());
+    map.put("title", a.getTitle());
+    map.put("dek", a.getDek());
+    map.put("category", a.getCategory());
+    map.put("author", a.getAuthor());
+    map.put("coverImage", cover);
+    map.put("coverImageUrls", covers);
+    map.put("date", a.getDate().toString());
+    map.put("pinned", a.isPinned());
+    map.put("published", Boolean.TRUE.equals(a.getPublished()));
+    return map;
+}
 
     @Data static class ArticleUpdateRequest {
         String title, dek, category, coverImage, richBody, videoUrl;
@@ -493,12 +512,30 @@ class AuthController {
 
     private void processReset(User user, boolean logOnly) {
         resetTokenRepo.deleteByUsername(user.getUsername());
-        String token = UUID.randomUUID().toString().replace("-","") + UUID.randomUUID().toString().replace("-","");
+
+        // Raw token — sent in the email URL only, never stored
+        String rawToken = UUID.randomUUID().toString().replace("-","")
+                        + UUID.randomUUID().toString().replace("-","");
+
+        // Hash the token before persisting so a DB read cannot be weaponised
+        String hashedToken;
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                .digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(64);
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            hashedToken = sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new RuntimeException("SHA-256 unavailable", e);
+        }
+
         PasswordResetToken prt = new PasswordResetToken();
-        prt.setToken(token); prt.setUsername(user.getUsername());
+        prt.setToken(hashedToken);           // only the hash lives in MongoDB
+        prt.setUsername(user.getUsername());
         prt.setExpiresAt(Instant.now().plusSeconds(3600));
         resetTokenRepo.save(prt);
-        String resetUrl = baseUrl + "/reset-password?token=" + token;
+
+        String resetUrl = baseUrl + "/reset-password?token=" + rawToken; // raw in link
         if (!logOnly && mailSender != null && user.getEmail() != null) {
             try {
                 SimpleMailMessage msg = new SimpleMailMessage();
@@ -510,16 +547,31 @@ class AuthController {
                 log.info("Password reset email sent to {}", user.getEmail());
             } catch (Exception e) {
                 log.error("Failed to send reset email: {}", e.getMessage());
-                log.warn("=== FALLBACK — Reset URL for {}: {} ===", user.getUsername(), resetUrl);
+                // NOTE: Do NOT log the reset URL here — it leaks an active credential
+                log.warn("=== FALLBACK — reset email failed for user: {} ===", user.getUsername());
             }
         } else {
+            // Local-dev only: log the URL when email is unconfigured.
+            // REMOVE or guard this behind a dev-only profile before deploying to production.
             log.warn("=== EMAIL NOT CONFIGURED — Reset URL for {}: {} ===", user.getUsername(), resetUrl);
         }
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
-        PasswordResetToken prt = resetTokenRepo.findByToken(req.getToken()).orElse(null);
+        // The user presents the raw token; hash it to match what is stored in MongoDB
+        String hashedToken;
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                .digest(req.getToken().getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(64);
+            for (byte b : digest) sb.append(String.format("%02x", b));
+            hashedToken = sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            return ResponseEntity.status(500).body(Map.of("message", "Internal error processing reset token."));
+        }
+
+        PasswordResetToken prt = resetTokenRepo.findByToken(hashedToken).orElse(null);
         if (prt == null || prt.isUsed() || Instant.now().isAfter(prt.getExpiresAt())) {
             return ResponseEntity.status(400).body(Map.of("message", "This reset link is invalid or has expired. Please request a new one."));
         }

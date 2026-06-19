@@ -190,7 +190,7 @@ function initQuill(containerId, initialHtml = '') {
                   headers.Authorization = `Bearer ${window.state.session.token}`;
                 }
 
-                const res = await fetch('/api/upload/inline-image', {
+                const res = await fetch(BASE + '/upload/inline-image', {
                   method: 'POST',
                   headers,
                   body: formData
@@ -353,7 +353,7 @@ async function showArticleDetail(articleId) {
   history.pushState({ view: 'article', id: articleId }, '', `/article/${articleId}`);
 
   try {
-    const res = await fetch(`/api/articles/${articleId}`);
+    const res = await fetch(BASE + `/articles/${articleId}`);
     const article = await res.json();
 
     const coverImages = Array.isArray(article.coverImageUrls)
@@ -395,7 +395,7 @@ async function showArticleDetail(articleId) {
 // Load related articles by category
 async function loadRelatedArticles(category, excludeId) {
   try {
-    const res = await fetch(`/api/articles?category=${encodeURIComponent(category)}`);
+    const res = await fetch(BASE + `/articles?category=${encodeURIComponent(category)}`);
     const articles = await res.json();
     const grid = document.getElementById('related-articles-grid');
     grid.innerHTML = '';
@@ -920,7 +920,7 @@ async function loadRelatedArticles(category, excludeId) {
     if (cover) formData.append('coverImage', cover);
     selectedImages.forEach(file => formData.append('images', file));
     try {
-      const res = await fetch('/api/submissions', {
+      const res = await fetch(BASE + '/submissions', {
         method: 'POST',
         headers: state.session?.token ? { 'Authorization': `Bearer ${state.session.token}` } : undefined,
         body: formData
