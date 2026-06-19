@@ -20,6 +20,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.annotation.Id;
@@ -82,29 +83,19 @@ public class GrafideApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(GrafideApplication.class, args);
-    }
-
-    @Bean
-    public WebMvcConfigurer staticFrontendConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addResourceHandlers(ResourceHandlerRegistry registry) {
-                registry.addResourceHandler("/**")
-                        .addResourceLocations("file:../Frontend/")
-                        .resourceChain(true)
-                        .addResolver(new org.springframework.web.servlet.resource.PathResourceResolver() {
-                            @Override
-                            protected Resource getResource(String resourcePath, Resource location) throws IOException {
-                                Resource requested = location.createRelative(resourcePath);
-                                if (requested.exists() && requested.isReadable()) return requested;
-                                return new org.springframework.core.io.FileSystemResource("../Frontend/index.html");
-                            }
-                        });
-            }
-        };
+    } 
+@Profile("!prod")
+@Bean
+public WebMvcConfigurer staticFrontendConfigurer() {
+    return new WebMvcConfigurer() {
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/**")
+                    .addResourceLocations("file:../Frontend/");
+        }
+};
     }
 }
-
 // ============================================================
 // HEALTH CHECK — GET /api/health
 // ============================================================

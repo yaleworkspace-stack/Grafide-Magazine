@@ -6,6 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class SpaFallbackController {
 
+ @GetMapping("/")
+    public String home() {
+        return "forward:/index.html";
+    }
+
     // Forward any non-API, non-file route to index.html
     @GetMapping(value = {
         "/article/**",
