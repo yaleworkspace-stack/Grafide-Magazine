@@ -1,10 +1,12 @@
-FROM maven:3.8.8-eclipse-temurin-17 AS build
+FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
-COPY Backend/ ./Backend/
-COPY Frontend/ ./Backend/src/main/resources/static/
-WORKDIR /app/Backend
-RUN mvn clean package -DskipTests
+COPY Backend/pom.xml Backend/
+COPY Backend/src Backend/src
+COPY Frontend /app/Backend/src/main/resources/static
+RUN cd Backend && mvn package -DskipTests
 
-FROM eclipse-temurin:17-jre-alpine
-COPY --from=build /app/Backend/target/*.jar /app.jar
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+FROM eclipse-temurin:17-jre
+WORKDIR /app
+COPY --from=build /app/Backend/target/*.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
