@@ -125,7 +125,7 @@ function updateMeta(v) {
     const a = state._articleData;
     title = `${a.title} — Grafide`;
     desc  = a.dek || SITE_DESC;
-    image = a.coverImage || '';
+    image = coverImageUrl(a);
   } else if (v.name === 'search') {
     title = (v.q ? `"${v.q}"` : 'Search') + ' — Grafide';
     desc  = v.q ? `Search results for "${v.q}" on Grafide.` : 'Search Grafide';
@@ -233,12 +233,12 @@ function getQuillHtml() {
 const Render = (() => {
   const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const fmt = d => { try { return new Date(d).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); } catch { return ''; } };
+  const coverImageUrl = article => (article?.coverImageUrls && article.coverImageUrls[0]) || '/images/logo.png';
 
   // ── Header ──────────────────────────────────────────────
   function header(session, currentView, searchQuery = '') {
     const isEditor = session?.role === 'editor';
     const nb = (view, label) => `<button class="linklike ${currentView===view?'active':''}" data-nav="${view}">${label}</button>`;
-    const podcastButton = `<button class="linklike ${currentView==='podcast'?'active':''}" data-view="podcast">PODCAST</button>`;
     const cats = CATEGORIES.map(c => `<button class="linklike ${currentView==='category-'+c?'active':''}" data-nav="category" data-cat="${c}">${c}</button>`).join('');
     const editorNav = isEditor ? `${nb('review','Review Queue')}${nb('manage','Manage')}${nb('subscribers','Subscribers')}` : '';
     const account = session
@@ -251,7 +251,7 @@ const Render = (() => {
       <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation menu">
         <span></span><span></span><span></span>
       </button>
-      <nav id="main-nav" class="main-nav nav">${nb('home','Home')}${podcastButton}${cats}${session?nb('submit','Submit'):''}${session?nb('mine','My Submissions'):''}${editorNav}</nav>
+      <nav id="main-nav" class="main-nav nav">${nb('home','Home')}${cats}${session?nb('submit','Submit'):''}${session?nb('mine','My Submissions'):''}${editorNav}</nav>
       <div class="header-right">
         <form class="header-search" id="header-search-form" role="search">
           <input type="search" id="header-search-input" class="header-search-input"
@@ -296,10 +296,10 @@ const Render = (() => {
   function home(articles, hasMore) {
     if (!articles) return `<div class="loading">Loading&hellip;</div>`;
     if (!articles.length) return `<div class="empty-state">No articles yet.</div>`;
-    const hero = articles[0], rest = articles.slice(1);
+    const hero = articles[0], heroImage = coverImageUrl(hero), rest = articles.slice(1);
     return `
       <div class="hero" data-nav="article" data-id="${esc(hero.id)}">
-        <img src="${esc(hero.coverImage)}" alt="${esc(hero.title)}" />
+        <img src="${esc(heroImage)}" alt="${esc(hero.title)}" />
         <div class="hero-overlay">
           <div class="eyebrow"><span class="diamond"></span>${esc(hero.category)}${hero.pinned?'&nbsp;&nbsp;Cover Story':''}</div>
           <h1 class="hero-title">${esc(hero.title)}</h1>
@@ -312,7 +312,8 @@ const Render = (() => {
   }
 
   function card(a) {
-    return `<div class="card" onclick="showArticleDetail('${esc(a.id)}')" data-nav="article" data-id="${esc(a.id)}"><div class="card-image-wrap"><img src="${esc(a.coverImage)}" alt="${esc(a.title)}" loading="lazy" /></div><span class="card-category">${esc(a.category)}</span><h3 class="card-title">${esc(a.title)}</h3><p class="card-dek">${esc(a.dek)}</p><span class="card-byline">By ${esc(a.author)}</span></div>`;
+    const thumbnail = coverImageUrl(a);
+    return `<div class="card" onclick="showArticleDetail('${esc(a.id)}')" data-nav="article" data-id="${esc(a.id)}"><div class="card-image-wrap"><img src="${esc(thumbnail)}" alt="${esc(a.title)}" loading="lazy" /></div><span class="card-category">${esc(a.category)}</span><h3 class="card-title">${esc(a.title)}</h3><p class="card-dek">${esc(a.dek)}</p><span class="card-byline">By ${esc(a.author)}</span></div>`;
   }
 
   // ── Category ─────────────────────────────────────────────
@@ -328,7 +329,7 @@ const Render = (() => {
     const bodyHtml = (a.richBody && a.richBody.trim())
       ? a.richBody
       : (Array.isArray(a.body) ? a.body.map(p=>`<p>${esc(p)}</p>`).join('') : `<p>${esc(a.body??'')}</p>`);
-    const coverSrc = a.coverImage || (Array.isArray(a.coverImageUrls) && a.coverImageUrls.length ? a.coverImageUrls[0] : '');
+    const coverSrc = coverImageUrl(a);
     const editorControls = isEditor ? `<div class="editor-controls"><button class="button ghost" data-nav="edit-article" data-id="${esc(a.id)}">Edit</button><button class="button ghost delete-article-btn" data-id="${esc(a.id)}" style="border-color:#B23A48;color:#B23A48">Delete</button></div>` : '';
     return `
       <div class="article-page">
