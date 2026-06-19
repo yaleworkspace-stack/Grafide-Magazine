@@ -6,7 +6,9 @@
 // ============================================================
 // API LAYER
 // ============================================================
-const BASE = '/api';
+const BASE = window.location.hostname === 'localhost'
+  ? '/api'
+  : 'https://grafide-magazine-s4ol.onrender.com/api';
 async function _request(method, path, body, token) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
