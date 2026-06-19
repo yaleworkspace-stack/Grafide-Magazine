@@ -200,16 +200,28 @@ class ArticleController {
     private final ArticleRepository articleRepo;
 
     @PostConstruct
-    void migrate() {
-        seed();
-        List<Article> legacy = articleRepo.findAll().stream()
-            .filter(a -> a.getPublished() == null).toList();
-        if (!legacy.isEmpty()) {
-            legacy.forEach(a -> a.setPublished(true));
-            articleRepo.saveAll(legacy);
-            log.info("Migrated {} legacy articles to published=true", legacy.size());
-        }
+void migrate() {
+    // One-time cleanup: remove any legacy seed articles that have no
+    // cover images, so seed() below can recreate them with images.
+    List<Article> noImages = articleRepo.findAll().stream()
+        .filter(a -> a.getCoverImageUrls() == null || a.getCoverImageUrls().isEmpty())
+        .filter(a -> a.getId() != null && a.getId().startsWith("seed-"))
+        .toList();
+    if (!noImages.isEmpty()) {
+        articleRepo.deleteAll(noImages);
+        log.info("Removed {} legacy seed articles with no cover images (will be reseeded).", noImages.size());
     }
+
+    seed();
+
+    List<Article> legacy = articleRepo.findAll().stream()
+        .filter(a -> a.getPublished() == null).toList();
+    if (!legacy.isEmpty()) {
+        legacy.forEach(a -> a.setPublished(true));
+        articleRepo.saveAll(legacy);
+        log.info("Migrated {} legacy articles to published=true", legacy.size());
+    }
+}
 
     // GET /api/articles?category=X&page=0&size=12
     @GetMapping
