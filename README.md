@@ -50,7 +50,7 @@ From the `Backend/` directory:
 
 ```bat
 cd Backend
-mvn spring-boot:run -Dspring-boot.run.profiles=local
+mvn spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
 The API starts on **http://localhost:8080**.  

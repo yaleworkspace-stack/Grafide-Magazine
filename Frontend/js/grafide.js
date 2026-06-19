@@ -62,7 +62,7 @@ const Auth = {
 // CONSTANTS
 // ============================================================
 const BRAND_WORDS = ['Fashion', 'Style', 'Culture', 'Photography', 'Lifestyle'];
-const CATEGORIES  = ['Fashion', 'Lifestyle', 'Photography', 'Culture', 'PODCAST'];
+const CATEGORIES  = ['Fashion', 'Lifestyle', 'Photography', 'Culture', 'Podcast'];
 const SITE_DESC   = 'A space dedicated to the art of fashion, culture, and photography.';
 
 // ============================================================

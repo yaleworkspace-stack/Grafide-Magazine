@@ -199,19 +199,8 @@ class LoginRateLimiter {
 class ArticleController {
     private final ArticleRepository articleRepo;
 
-    @PostConstruct
+   @PostConstruct
 void migrate() {
-    // One-time cleanup: remove any legacy seed articles that have no
-    // cover images, so seed() below can recreate them with images.
-    List<Article> noImages = articleRepo.findAll().stream()
-        .filter(a -> a.getCoverImageUrls() == null || a.getCoverImageUrls().isEmpty())
-        .filter(a -> a.getId() != null && a.getId().startsWith("seed-"))
-        .toList();
-    if (!noImages.isEmpty()) {
-        articleRepo.deleteAll(noImages);
-        log.info("Removed {} legacy seed articles with no cover images (will be reseeded).", noImages.size());
-    }
-
     seed();
 
     List<Article> legacy = articleRepo.findAll().stream()
@@ -345,7 +334,8 @@ void migrate() {
     }
 
     void seed() {
-        if (articleRepo.count() > 0) return;
+    boolean alreadySeeded = articleRepo.existsById("seed-1");
+    if (alreadySeeded) return;
         record S(String id, String title, String cat, String author, String dek,
                  List<String> body, String img, String date) {}
         List<S> seeds = List.of(
