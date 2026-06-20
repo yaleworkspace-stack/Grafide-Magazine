@@ -97,11 +97,11 @@ function urlToView() {
   return valid.includes(seg) ? { name: seg } : { name: 'home' };
 }
 
-function pageTitle(v) {
+function pageTitle(v, articleData) {
   const s = ' — Grafide';
   switch (v.name) {
     case 'home':            return 'Grafide — A space dedicated to the art of fashion.';
-    case 'article':         return (state._articleData?.title || 'Article') + s;
+    case 'article':  return ((articleData?.title) || 'Article') + s;
     case 'category':        return (v.cat || '') + s;
     case 'submit':          return 'Submit' + s;
     case 'mine':            return 'My Submissions' + s;
@@ -118,16 +118,16 @@ function pageTitle(v) {
 }
 
 // ── OG/Twitter meta tag updater ──────────────────────────
-function updateMeta(v) {
+function updateMeta(v, articleData) {
   const set = (sel, val) => { const el = document.querySelector(sel); if (el) el.setAttribute('content', val); };
   const url = window.location.origin + viewToUrl(v);
-  let title = pageTitle(v), desc = SITE_DESC, image = '';
+  let title = pageTitle(v, articleData), desc = SITE_DESC, image = '';
 
-  if (v.name === 'article' && state._articleData) {
-    const a = state._articleData;
+  if (v.name === 'article' && articleData) {
+    const a = articleData;
     title = `${a.title} — Grafide`;
     desc  = a.dek || SITE_DESC;
-    image = coverImageUrl(a);
+    image = (a.coverImageUrls && a.coverImageUrls[0]) || '/images/logo.png';
   } else if (v.name === 'search') {
     title = (v.q ? `"${v.q}"` : 'Search') + ' — Grafide';
     desc  = v.q ? `Search results for "${v.q}" on Grafide.` : 'Search Grafide';
@@ -315,7 +315,7 @@ const Render = (() => {
 
   function card(a) {
     const thumbnail = coverImageUrl(a);
-    return `<div class="card" onclick="showArticleDetail('${esc(a.id)}')" data-nav="article" data-id="${esc(a.id)}"><div class="card-image-wrap"><img src="${esc(thumbnail)}" alt="${esc(a.title)}" loading="lazy" /></div><span class="card-category">${esc(a.category)}</span><h3 class="card-title">${esc(a.title)}</h3><p class="card-dek">${esc(a.dek)}</p><span class="card-byline">By ${esc(a.author)}</span></div>`;
+    return `<div class="card" data-nav="article" data-id="${esc(a.id)}"><div class="card-image-wrap"><img src="${esc(thumbnail)}" alt="${esc(a.title)}" loading="lazy" /></div><span class="card-category">${esc(a.category)}</span><h3 class="card-title">${esc(a.title)}</h3><p class="card-dek">${esc(a.dek)}</p><span class="card-byline">By ${esc(a.author)}</span></div>`;
   }
 
   // ── Category ─────────────────────────────────────────────
@@ -345,75 +345,7 @@ const Render = (() => {
         <div class="article-body">${bodyHtml}</div>
       </div>`;
   }
-// Show article detail page
-async function showArticleDetail(articleId) {
-  // Hide all views, show detail view
-  document.querySelectorAll('section[id$="-view"]').forEach(s => s.style.display = 'none');
-  document.getElementById('article-detail-view').style.display = 'block';
 
-  // Push URL state
-  history.pushState({ view: 'article', id: articleId }, '', `/article/${articleId}`);
-
-  try {
-    const res = await fetch(BASE + `/articles/${articleId}`);
-    const article = await res.json();
-
-    const coverImages = Array.isArray(article.coverImageUrls)
-      ? article.coverImageUrls
-      : (article.coverImage ? [article.coverImage] : []);
-    setupArticleDetailCover(coverImages, article.title);
-    document.getElementById('article-detail-title').textContent = article.title;
-    document.getElementById('article-detail-author').textContent = `By ${article.author || article.authorName || 'Grafide'}`;
-    document.getElementById('article-detail-category').textContent = article.category || '';
-    const bodyEl = document.getElementById('article-detail-body');
-    if (article.richBody && article.richBody.trim()) {
-      bodyEl.innerHTML = article.richBody;
-    } else if (Array.isArray(article.body)) {
-      bodyEl.innerHTML = article.body.map(p => `<p>${esc(p)}</p>`).join('');
-    } else {
-      bodyEl.innerHTML = esc(article.body || '');
-    }
-
-    if (article.videoUrl) {
-      const iframe = document.createElement('iframe');
-      iframe.src = article.videoUrl;
-      iframe.width = '100%';
-      iframe.height = '450';
-      iframe.frameBorder = '0';
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-      iframe.allowFullscreen = true;
-      iframe.style.display = 'block';
-      iframe.style.marginTop = '24px';
-      bodyEl.appendChild(iframe);
-    }
-
-    // Load related articles (same category)
-    loadRelatedArticles(article.category, articleId);
-  } catch (err) {
-    console.error('Failed to load article', err);
-  }
-}
-
-// Load related articles by category
-async function loadRelatedArticles(category, excludeId) {
-  try {
-    const res = await fetch(BASE + `/articles?category=${encodeURIComponent(category)}`);
-    const articles = await res.json();
-    const grid = document.getElementById('related-articles-grid');
-    grid.innerHTML = '';
-
-    const related = (articles.content || articles)
-      .filter(a => a.id !== excludeId)
-      .slice(0, 4);
-
-    related.forEach(a => {
-      const card = buildArticleCard(a); // reuse your existing card builder
-      grid.appendChild(card);
-    });
-  } catch (err) {
-    console.error('Failed to load related articles', err);
-  }
-}
   // ── Auth ─────────────────────────────────────────────────
   function auth(mode = 'signin', error = '') {
     const isSignIn = mode === 'signin';
@@ -738,7 +670,6 @@ async function loadRelatedArticles(category, excludeId) {
     state._quillInit     = '';
 
     if (push) history.pushState({ view: viewObj }, '', viewToUrl(viewObj));
-    updateMeta(viewObj);
     paint();
 
     const tok = state.session?.token;
@@ -748,7 +679,7 @@ async function loadRelatedArticles(category, excludeId) {
     if (viewObj.name === 'article' && viewObj.id) {
       state._articleData = null;
       try { state._articleData = await Articles.get(viewObj.id); } catch { state._articleData = null; }
-      updateMeta(viewObj);
+      updateMeta(viewObj, state._articleData);
       paint();
     }
     if (viewObj.name === 'category' && viewObj.cat) {
@@ -870,12 +801,12 @@ async function loadRelatedArticles(category, excludeId) {
     container.innerHTML = `
       <div class="detail-slideshow" data-index="0">
         <div class="slideshow-frame">
-          <img class="detail-slideshow-image" src="${esc(images[0])}" alt="${esc(title)}" />
+          <img class="detail-slideshow-image" src="${images[0]}" alt="${title}" />
           ${hasMultiple ? `<button type="button" class="slideshow-control prev" aria-label="Previous image">&#10094;</button>
             <button type="button" class="slideshow-control next" aria-label="Next image">&#10095;</button>` : ''}
         </div>
         ${hasMultiple ? `<div class="slideshow-thumbs">
-          ${images.map((src, idx) => `<button type="button" class="slideshow-thumb${idx===0?' active':''}" data-index="${idx}" aria-label="Show image ${idx+1}"><img src="${esc(src)}" alt="${esc(title)} cover ${idx+1}" /></button>`).join('')}
+          ${images.map((src, idx) => `<button type="button" class="slideshow-thumb${idx===0?' active':''}" data-index="${idx}" aria-label="Show image ${idx+1}"><img src="${src}" alt="${title} cover ${idx+1}" /></button>`).join('')}
         </div>` : ''}
       </div>`;
     if (!hasMultiple) return;
@@ -1029,14 +960,31 @@ async function loadRelatedArticles(category, excludeId) {
   // ── Bind Events ──────────────────────────────────────────
   function bindEvents() {
     $header.addEventListener('click', handleNavClick);
-    document.getElementById('nav-toggle')?.addEventListener('click', () => {
-      document.getElementById('main-nav')?.classList.toggle('open');
+
+    const navToggleBtn = document.getElementById('nav-toggle');
+    const mainNavEl = document.getElementById('main-nav');
+
+    navToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navToggleBtn.classList.toggle('open');
+      mainNavEl.classList.toggle('open');
     });
+
+    // Close menu when clicking anywhere outside the nav or toggle button
+    document.addEventListener('click', (e) => {
+      const isClickInsideNav = mainNavEl.contains(e.target);
+      const isClickOnToggle = navToggleBtn.contains(e.target);
+      if (!isClickInsideNav && !isClickOnToggle && mainNavEl.classList.contains('open')) {
+        mainNavEl.classList.remove('open');
+        navToggleBtn.classList.remove('open');
+      }
+    });
+
+    // Close menu after a nav link is clicked
     document.querySelectorAll('#main-nav [data-nav], #main-nav [data-view]').forEach(link => {
       link.addEventListener('click', () => {
-        if (window.innerWidth <= 768) {
-          document.getElementById('main-nav')?.classList.remove('open');
-        }
+        mainNavEl.classList.remove('open');
+        navToggleBtn.classList.remove('open');
       });
     });
 
