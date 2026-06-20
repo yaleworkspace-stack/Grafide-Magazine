@@ -73,6 +73,7 @@ function viewToUrl(v) {
     case 'home':            return '/';
     case 'article':         return `/article/${v.id || ''}`;
     case 'category':        return `/category/${encodeURIComponent(v.cat || '')}`;
+    case 'podcast':         return '/podcast';
     case 'edit-article':    return `/edit-article/${v.id || ''}`;
     case 'resubmit':        return `/resubmit/${v.id || ''}`;
     case 'reset-password':  return `/reset-password?token=${v.token || ''}`;
@@ -87,7 +88,11 @@ function urlToView() {
   const [seg, param] = parts;
   if (!seg) return { name: 'home' };
   if (seg === 'article'         && param) return { name: 'article',         id: param };
-  if (seg === 'category'        && param) return { name: 'category',        cat: decodeURIComponent(param) };
+  if (seg === 'category'        && param) {
+    const decoded = decodeURIComponent(param);
+    return decoded === 'Podcast' ? { name: 'podcast' } : { name: 'category', cat: decoded };
+  }
+  if (seg === 'podcast')                           return { name: 'podcast' };
   if (seg === 'edit-article'    && param) return { name: 'edit-article',    id: param };
   if (seg === 'resubmit'        && param) return { name: 'resubmit',        id: param };
   if (seg === 'reset-password')           return { name: 'reset-password',  token: new URLSearchParams(window.location.search).get('token') || '' };
@@ -182,7 +187,8 @@ function initQuill(containerId, initialHtml = '') {
                 return;
               }
 
-              const range = quillEditor.getSelection(true);
+              quillEditor.focus();
+              const range = quillEditor.getSelection(true) || { index: quillEditor.getLength(), length: 0 };
               const formData = new FormData();
               formData.append('file', file);
 
@@ -241,7 +247,11 @@ const Render = (() => {
   function header(session, currentView, searchQuery = '') {
     const isEditor = session?.role === 'editor';
     const nb = (view, label) => `<button class="linklike ${currentView===view?'active':''}" data-nav="${view}">${label}</button>`;
-    const cats = CATEGORIES.map(c => `<button class="linklike ${currentView==='category-'+c?'active':''}" data-nav="category" data-cat="${c}">${c}</button>`).join('');
+    const cats = CATEGORIES.map(c => {
+      const isPodcast = c === 'Podcast';
+      const activeKey = isPodcast ? 'podcast' : 'category-'+c;
+      return `<button class="linklike ${currentView=== activeKey ? 'active' : ''}" data-nav="${isPodcast ? 'podcast' : 'category'}" data-cat="${c}">${c}</button>`;
+    }).join('');
     const editorNav = isEditor ? `${nb('review','Review Queue')}${nb('manage','Manage')}${nb('subscribers','Subscribers')}` : '';
     const account = session
       ? `<div class="account-pill"><span class="diamond"></span><span>${esc(session.displayName)}</span>${isEditor?'<span class="editor-badge">Editor</span>':''}<button class="linklike" id="signout-btn">Sign Out</button></div>`
@@ -322,6 +332,11 @@ const Render = (() => {
   function category(cat, articles, hasMore) {
     if (!articles) return `<div class="loading">Loading&hellip;</div>`;
     return `<section class="section"><div class="section-head"><h2>${esc(cat)}</h2><div class="line"></div></div>${!articles.length?`<div class="empty-state">Nothing in ${esc(cat)} yet.</div>`:`<div class="grid">${articles.map(card).join('')}</div>${hasMore?`<div class="load-more-wrap"><button class="button ghost load-more-btn" data-type="category">Load More</button></div>`:''}`}</section>`;
+  }
+
+  function podcast(articles, hasMore) {
+    if (!articles) return `<div class="loading">Loading&hellip;</div>`;
+    return `<section class="section"><div class="section-head"><h2>Podcast</h2><div class="line"></div></div><div class="podcast-intro"><p>Explore immersive stories from the Podcast category.</p></div>${!articles.length?`<div class="empty-state">Nothing in Podcast yet.</div>`:`<div class="grid">${articles.map(card).join('')}</div>${hasMore?`<div class="load-more-wrap"><button class="button ghost load-more-btn" data-type="category">Load More</button></div>`:''}`}</section>`;
   }
 
   // ── Article ───────────────────────────────────────────────
@@ -644,6 +659,7 @@ const Render = (() => {
     switch (v.name) {
       case 'home':            return Render.home(state.articles, state._hasMore);
       case 'category':        return Render.category(state._categoryName, state._categoryData, state._categoryHasMore);
+      case 'podcast':         return Render.podcast(state._categoryData, state._categoryHasMore);
       case 'article':         return Render.article(state._articleData, ed);
       case 'auth':            return Render.auth(state.authMode, state._authError);
       case 'search':          return Render.search(state._searchResults, state._searchQuery);
@@ -687,6 +703,11 @@ const Render = (() => {
       try { const r = await Articles.listByCategory(viewObj.cat, 0); state._categoryData = r.articles||[]; state._categoryHasMore = r.hasMore||false; } catch { state._categoryData = []; }
       paint();
     }
+    if (viewObj.name === 'podcast') {
+      state._categoryName = 'Podcast'; state._categoryData = null; state._categoryPage = 0; state._categoryHasMore = false;
+      try { const r = await Articles.listByCategory('Podcast', 0); state._categoryData = r.articles||[]; state._categoryHasMore = r.hasMore||false; } catch { state._categoryData = []; }
+      paint();
+    }
     if (viewObj.name === 'search') {
       state._searchQuery   = viewObj.q || '';
       state._searchResults = null;
@@ -727,7 +748,7 @@ const Render = (() => {
     e.preventDefault();
     const viewName = el.dataset.nav || el.dataset.view;
     const navObj = viewName === 'podcast'
-      ? { name: 'category', cat: 'PODCAST' }
+      ? { name: 'podcast' }
       : { name: viewName, id: el.dataset.id, cat: el.dataset.cat };
     navigate(navObj);
   }
@@ -829,6 +850,36 @@ const Render = (() => {
     selectedImages = selectedImages.filter((_, idx) => idx !== index);
     renderImagePreviewStrip();
   }
+
+  function openImageLightbox(url) {
+    const overlay = document.createElement('div');
+    overlay.className = 'image-lightbox';
+    overlay.innerHTML = `
+      <div class="image-lightbox-backdrop"></div>
+      <div class="image-lightbox-frame">
+        <button type="button" class="image-lightbox-close" aria-label="Close preview">×</button>
+        <img src="${url}" alt="Full-size preview" />
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const cleanup = () => {
+      document.body.removeChild(overlay);
+      document.removeEventListener('keydown', keyHandler);
+      URL.revokeObjectURL(url);
+    };
+
+    const keyHandler = (event) => {
+      if (event.key === 'Escape') cleanup();
+    };
+
+    overlay.addEventListener('click', (event) => {
+      if (event.target === overlay || event.target.classList.contains('image-lightbox-close')) {
+        cleanup();
+      }
+    });
+    document.addEventListener('keydown', keyHandler);
+  }
+
   function toggleVideoUrlField(selectId, fieldId = 'video-url-field') {
     const select = document.getElementById(selectId);
     const field = document.getElementById(fieldId);
@@ -1030,9 +1081,18 @@ const Render = (() => {
     document.getElementById('f-cover-file')?.addEventListener('change', handleCoverPreview);
     document.getElementById('image-preview-strip')?.addEventListener('click', e => {
       const btn = e.target.closest('.preview-remove');
-      if (!btn) return;
-      const index = Number(btn.dataset.index);
-      if (!Number.isNaN(index)) removeSelectedImage(index);
+      if (btn) {
+        const index = Number(btn.dataset.index);
+        if (!Number.isNaN(index)) removeSelectedImage(index);
+        return;
+      }
+      const thumb = e.target.closest('.preview-thumb');
+      if (thumb) {
+        const index = Number(thumb.dataset.index);
+        if (!Number.isNaN(index) && selectedImages[index]) {
+          openImageLightbox(URL.createObjectURL(selectedImages[index]));
+        }
+      }
     });
     document.getElementById('submit-form')?.addEventListener('submit', handleSubmit);
     document.getElementById('resubmit-form')?.addEventListener('submit', handleResubmit);

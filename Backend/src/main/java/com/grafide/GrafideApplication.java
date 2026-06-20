@@ -271,6 +271,7 @@ void migrate() {
         }
         // If neither field is present, coverImageUrls is left untouched.
         if (req.getBody()     != null && !req.getBody().isEmpty())     a.setBody(req.getBody());
+        if (req.getRichBody() != null && !req.getRichBody().isBlank())  a.setRichBody(req.getRichBody());
         if (req.getVideoUrl() != null)                                 a.setVideoUrl(req.getVideoUrl());
         articleRepo.save(a);
         return ResponseEntity.ok(Map.of("status", "updated"));
