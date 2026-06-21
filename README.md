@@ -192,3 +192,6 @@ The native Windows MongoDB service starts faster, persists data between sessions
 ### Why `@Profile("local")` on `SpaFallbackController` and `staticFrontendConfigurer`?
 
 In the prod Docker image, Spring must not intercept `/article/**` or serve `../Frontend/` — the frontend is a completely separate Render Static Site. If these beans activated in prod, every SPA-route request would 404 inside the container (the `Frontend/` directory doesn't exist in the image) and potentially mask API errors.
+git add .
+git commit -m "Fix article edit persistence, Quill inline images, portrait rotation, add Podcast and Magazines pages"
+git push

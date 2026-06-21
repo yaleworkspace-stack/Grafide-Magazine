@@ -271,7 +271,7 @@ void migrate() {
         }
         // If neither field is present, coverImageUrls is left untouched.
         if (req.getBody()     != null && !req.getBody().isEmpty())     a.setBody(req.getBody());
-        if (req.getRichBody() != null && !req.getRichBody().isBlank())  a.setRichBody(req.getRichBody());
+        if (req.getRichBody() != null && !req.getRichBody().isBlank()) a.setRichBody(req.getRichBody());
         if (req.getVideoUrl() != null)                                 a.setVideoUrl(req.getVideoUrl());
         articleRepo.save(a);
         return ResponseEntity.ok(Map.of("status", "updated"));
@@ -780,7 +780,104 @@ class SubscriberController {
 }
 
 // ============================================================
-// UPLOAD CONTROLLER
+// MAGAZINE CONTROLLER
+// Editor-only: upload an issue (cover + body with images), no
+// review queue — publishes immediately, same as direct article edits.
+// ============================================================
+@RestController
+@RequestMapping("/api/magazines")
+@RequiredArgsConstructor
+@Slf4j
+class MagazineController {
+    private final MagazineRepository magazineRepo;
+    private final UploadController uploadController;
+
+    @GetMapping
+    public List<Map<String, Object>> list() {
+        return magazineRepo.findAllByOrderByDateDesc().stream().map(this::toSummary).toList();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> get(@PathVariable String id) {
+        return magazineRepo.findById(id)
+            .<ResponseEntity<?>>map(ResponseEntity::ok)
+            .orElse(ResponseEntity.status(404).body(Map.of("message", "Issue not found.")));
+    }
+
+    // Editor: upload a new issue. Cover image + any number of body images.
+    @PostMapping(consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+    public ResponseEntity<?> create(
+        @RequestParam("title") String title,
+        @RequestParam(value = "dek", required = false) String dek,
+        @RequestParam(value = "richBody", required = false) String richBody,
+        @RequestPart(value = "cover", required = false) MultipartFile cover,
+        @RequestPart(value = "bodyImages", required = false) MultipartFile[] bodyImages
+    ) {
+        if (title == null || title.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Title is required."));
+        }
+        String coverUrl = "";
+        try {
+            if (cover != null && !cover.isEmpty()) {
+                coverUrl = uploadController.storeImage(cover);
+            }
+            List<String> bodyImageUrls = new ArrayList<>();
+            if (bodyImages != null) {
+                for (MultipartFile file : bodyImages) {
+                    if (file == null || file.isEmpty()) continue;
+                    bodyImageUrls.add(uploadController.storeImage(file));
+                }
+            }
+            Magazine m = new Magazine();
+            m.setTitle(title.trim());
+            m.setDek(dek != null ? dek.trim() : "");
+            m.setCoverUrl(coverUrl);
+            m.setRichBody(richBody != null ? richBody : "");
+            m.setBodyImageUrls(bodyImageUrls);
+            m.setDate(Instant.now());
+            magazineRepo.save(m);
+            return ResponseEntity.ok(Map.of("id", m.getId(), "status", "published"));
+        } catch (IOException e) {
+            log.error("Magazine image upload failed: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("message", "Image upload failed."));
+        }
+    }
+
+    // Editor: edit an existing issue
+    @PutMapping("/{id}")
+    public ResponseEntity<?> update(@PathVariable String id, @RequestBody MagazineUpdateRequest req) {
+        Magazine m = magazineRepo.findById(id).orElse(null);
+        if (m == null) return ResponseEntity.notFound().build();
+        if (req.getTitle()    != null && !req.getTitle().isBlank()) m.setTitle(req.getTitle());
+        if (req.getDek()      != null)                                m.setDek(req.getDek());
+        if (req.getCoverUrl() != null && !req.getCoverUrl().isBlank()) m.setCoverUrl(req.getCoverUrl());
+        if (req.getRichBody() != null)                                m.setRichBody(req.getRichBody());
+        magazineRepo.save(m);
+        return ResponseEntity.ok(Map.of("status", "updated"));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> delete(@PathVariable String id) {
+        if (!magazineRepo.existsById(id)) return ResponseEntity.notFound().build();
+        magazineRepo.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    private Map<String, Object> toSummary(Magazine m) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", m.getId());
+        map.put("title", m.getTitle());
+        map.put("dek", m.getDek());
+        map.put("coverUrl", m.getCoverUrl());
+        map.put("date", m.getDate().toString());
+        return map;
+    }
+
+    @Data static class MagazineUpdateRequest {
+        String title, dek, coverUrl, richBody;
+    }
+}
+
 // ============================================================
 @RestController
 @RequestMapping("/api/upload")
@@ -886,6 +983,9 @@ class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT,    "/api/articles/**").hasRole("EDITOR")
                 .requestMatchers(HttpMethod.DELETE, "/api/articles/**").hasRole("EDITOR")
                 .requestMatchers(HttpMethod.GET,    "/api/subscribers").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.POST,   "/api/magazines").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.PUT,    "/api/magazines/**").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.DELETE, "/api/magazines/**").hasRole("EDITOR")
                 .anyRequest().permitAll()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
@@ -1019,6 +1119,15 @@ class Subscriber {
     private Instant date;
 }
 
+@Data @NoArgsConstructor @Document(collection = "magazines")
+class Magazine {
+    @Id private String id;
+    private String title, dek, coverUrl;
+    private String richBody;
+    private List<String> bodyImageUrls = new ArrayList<>();
+    @Indexed private Instant date;
+}
+
 // ============================================================
 // REPOSITORIES
 // ============================================================
@@ -1066,4 +1175,8 @@ interface PasswordResetTokenRepository extends MongoRepository<PasswordResetToke
 interface SubscriberRepository extends MongoRepository<Subscriber, String> {
     boolean existsByEmail(String email);
     List<Subscriber> findAllByOrderByDateDesc();
+}
+
+interface MagazineRepository extends MongoRepository<Magazine, String> {
+    List<Magazine> findAllByOrderByDateDesc();
 }

@@ -41,6 +41,11 @@ const Subscribers = {
   subscribe: (email) => Api.post('/subscribers', { email }),
   list:      (tok)   => Api.get('/subscribers', tok),
 };
+const Magazines = {
+  list:   ()           => Api.get('/magazines'),
+  get:    (id)          => Api.get(`/magazines/${id}`),
+  delete: (id, tok)     => Api.delete(`/magazines/${id}`, tok),
+};
 const Submissions = {
   create:   (d, tok)         => Api.post('/submissions', d, tok),
   mine:     (tok)            => Api.get('/submissions/mine', tok),
@@ -73,8 +78,9 @@ function viewToUrl(v) {
     case 'home':            return '/';
     case 'article':         return `/article/${v.id || ''}`;
     case 'category':        return `/category/${encodeURIComponent(v.cat || '')}`;
-    case 'podcast':         return '/podcast';
     case 'edit-article':    return `/edit-article/${v.id || ''}`;
+    case 'magazines':       return '/magazines';
+    case 'magazine':        return `/magazines/${v.id || ''}`;
     case 'resubmit':        return `/resubmit/${v.id || ''}`;
     case 'reset-password':  return `/reset-password?token=${v.token || ''}`;
     case 'search':          return `/search?q=${encodeURIComponent(v.q || '')}`;
@@ -88,17 +94,15 @@ function urlToView() {
   const [seg, param] = parts;
   if (!seg) return { name: 'home' };
   if (seg === 'article'         && param) return { name: 'article',         id: param };
-  if (seg === 'category'        && param) {
-    const decoded = decodeURIComponent(param);
-    return decoded === 'Podcast' ? { name: 'podcast' } : { name: 'category', cat: decoded };
-  }
-  if (seg === 'podcast')                           return { name: 'podcast' };
+  if (seg === 'category'        && param) return { name: 'category',        cat: decodeURIComponent(param) };
   if (seg === 'edit-article'    && param) return { name: 'edit-article',    id: param };
+  if (seg === 'magazines'       && param) return { name: 'magazine',        id: param };
+  if (seg === 'magazines')                return { name: 'magazines' };
   if (seg === 'resubmit'        && param) return { name: 'resubmit',        id: param };
   if (seg === 'reset-password')           return { name: 'reset-password',  token: new URLSearchParams(window.location.search).get('token') || '' };
   if (seg === 'search')                   return { name: 'search', q: new URLSearchParams(window.location.search).get('q') || '' };
   if (seg === 'forgot-password')          return { name: 'forgot-password' };
-  const valid = ['submit','auth','mine','review','manage','subscribers'];
+  const valid = ['submit','auth','mine','review','manage','subscribers','upload-magazine'];
   return valid.includes(seg) ? { name: seg } : { name: 'home' };
 }
 
@@ -108,6 +112,8 @@ function pageTitle(v, articleData) {
     case 'home':            return 'Grafide — A space dedicated to the art of fashion.';
     case 'article':  return ((articleData?.title) || 'Article') + s;
     case 'category':        return (v.cat || '') + s;
+    case 'magazines':       return 'Magazines' + s;
+    case 'magazine':        return ((articleData?.title) || 'Issue') + s;
     case 'submit':          return 'Submit' + s;
     case 'mine':            return 'My Submissions' + s;
     case 'resubmit':        return 'Edit & Resubmit' + s;
@@ -157,9 +163,10 @@ function updateMeta(v, articleData) {
 // ============================================================
 let quillEditor = null;
 
-function initQuill(containerId, initialHtml = '') {
+function initQuill(containerId, initialHtml = '', authToken = '') {
   const el = document.getElementById(containerId);
   if (!el || typeof Quill === 'undefined') return;
+  const currentToken = authToken;
   quillEditor = new Quill(el, {
     theme: 'snow',
     placeholder: 'Write your article here…',
@@ -187,15 +194,13 @@ function initQuill(containerId, initialHtml = '') {
                 return;
               }
 
-              quillEditor.focus();
-              const range = quillEditor.getSelection(true) || { index: quillEditor.getLength(), length: 0 };
               const formData = new FormData();
               formData.append('file', file);
 
               try {
                 const headers = {};
-                if (window.state?.session?.token) {
-                  headers.Authorization = `Bearer ${window.state.session.token}`;
+                if (currentToken) {
+                  headers.Authorization = `Bearer ${currentToken}`;
                 }
 
                 const res = await fetch(BASE + '/upload/inline-image', {
@@ -205,16 +210,21 @@ function initQuill(containerId, initialHtml = '') {
                 });
 
                 if (!res.ok) {
-                  showToast('Image upload failed.');
+                  (typeof showToast === 'function' ? showToast('Image upload failed.') : alert('Image upload failed.'));
                   return;
                 }
 
                 const data = await res.json();
-                quillEditor.insertEmbed(range.index, 'image', data.url);
-                quillEditor.setSelection(range.index + 1);
+                // Refocus the editor (the native file picker steals focus, which can
+                // invalidate the prior selection) and capture the range fresh, right
+                // before inserting — not before the picker opened.
+                quillEditor.focus();
+                const range = quillEditor.getSelection(true) || { index: quillEditor.getLength() };
+                quillEditor.insertEmbed(range.index, 'image', data.url, 'user');
+                quillEditor.setSelection(range.index + 1, 0, 'user');
               } catch (error) {
                 console.error('Inline image upload error', error);
-                showToast('Image upload failed.');
+                (typeof showToast === 'function' ? showToast('Image upload failed.') : alert('Image upload failed.'));
               } finally {
                 document.body.removeChild(input);
               }
@@ -247,12 +257,8 @@ const Render = (() => {
   function header(session, currentView, searchQuery = '') {
     const isEditor = session?.role === 'editor';
     const nb = (view, label) => `<button class="linklike ${currentView===view?'active':''}" data-nav="${view}">${label}</button>`;
-    const cats = CATEGORIES.map(c => {
-      const isPodcast = c === 'Podcast';
-      const activeKey = isPodcast ? 'podcast' : 'category-'+c;
-      return `<button class="linklike ${currentView=== activeKey ? 'active' : ''}" data-nav="${isPodcast ? 'podcast' : 'category'}" data-cat="${c}">${c}</button>`;
-    }).join('');
-    const editorNav = isEditor ? `${nb('review','Review Queue')}${nb('manage','Manage')}${nb('subscribers','Subscribers')}` : '';
+    const cats = CATEGORIES.map(c => `<button class="linklike ${currentView==='category-'+c?'active':''}" data-nav="category" data-cat="${c}">${c}</button>`).join('');
+    const editorNav = isEditor ? `${nb('review','Review Queue')}${nb('manage','Manage')}${nb('upload-magazine','Upload Issue')}${nb('subscribers','Subscribers')}` : '';
     const account = session
       ? `<div class="account-pill"><span class="diamond"></span><span>${esc(session.displayName)}</span>${isEditor?'<span class="editor-badge">Editor</span>':''}<button class="linklike" id="signout-btn">Sign Out</button></div>`
       : `<button class="linklike" data-nav="auth">Sign In / Register</button>`;
@@ -263,7 +269,7 @@ const Render = (() => {
       <button id="nav-toggle" class="nav-toggle" aria-label="Toggle navigation menu">
         <span></span><span></span><span></span>
       </button>
-      <nav id="main-nav" class="main-nav nav">${nb('home','Home')}${cats}${session?nb('submit','Submit'):''}${session?nb('mine','My Submissions'):''}${editorNav}</nav>
+      <nav id="main-nav" class="main-nav nav">${nb('home','Home')}${cats}${nb('magazines','Magazines')}${session?nb('submit','Submit'):''}${session?nb('mine','My Submissions'):''}${editorNav}</nav>
       <div class="header-right">
         <form class="header-search" id="header-search-form" role="search">
           <input type="search" id="header-search-input" class="header-search-input"
@@ -328,15 +334,94 @@ const Render = (() => {
     return `<div class="card" data-nav="article" data-id="${esc(a.id)}"><div class="card-image-wrap"><img src="${esc(thumbnail)}" alt="${esc(a.title)}" loading="lazy" /></div><span class="card-category">${esc(a.category)}</span><h3 class="card-title">${esc(a.title)}</h3><p class="card-dek">${esc(a.dek)}</p><span class="card-byline">By ${esc(a.author)}</span></div>`;
   }
 
+  // ── Podcast card (distinct visual treatment: play icon, audio-styled) ────
+  function podcastCard(a) {
+    const thumbnail = coverImageUrl(a);
+    const playIcon = `<svg viewBox="0 0 24 24" width="22" height="22" fill="#fff"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,0.55)"/><path d="M9.5 7.5v9l8-4.5z" fill="#fff"/></svg>`;
+    return `<div class="podcast-card" data-nav="article" data-id="${esc(a.id)}">
+      <div class="podcast-card-image-wrap">
+        <img src="${esc(thumbnail)}" alt="${esc(a.title)}" loading="lazy" />
+        <span class="podcast-play-badge">${playIcon}</span>
+      </div>
+      <span class="podcast-card-eyebrow"><span class="diamond diamond-sm"></span>EPISODE</span>
+      <h3 class="podcast-card-title">${esc(a.title)}</h3>
+      <p class="podcast-card-dek">${esc(a.dek)}</p>
+      <span class="podcast-card-byline">${esc(a.author)}</span>
+    </div>`;
+  }
+
   // ── Category ─────────────────────────────────────────────
   function category(cat, articles, hasMore) {
     if (!articles) return `<div class="loading">Loading&hellip;</div>`;
+    const isPodcast = String(cat).toLowerCase() === 'podcast';
+    if (isPodcast) {
+      return `<section class="section podcast-section">
+        <div class="podcast-hero">
+          <div class="podcast-hero-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4M9 22h6"/></svg></div>
+          <h1>Grafide Podcast</h1>
+          <p>Conversations on fashion, culture, and the people shaping them.</p>
+        </div>
+        ${!articles.length
+          ? `<div class="empty-state">No episodes yet.</div>`
+          : `<div class="podcast-grid">${articles.map(podcastCard).join('')}</div>${hasMore?`<div class="load-more-wrap"><button class="button ghost load-more-btn" data-type="category">Load More</button></div>`:''}`
+        }
+      </section>`;
+    }
     return `<section class="section"><div class="section-head"><h2>${esc(cat)}</h2><div class="line"></div></div>${!articles.length?`<div class="empty-state">Nothing in ${esc(cat)} yet.</div>`:`<div class="grid">${articles.map(card).join('')}</div>${hasMore?`<div class="load-more-wrap"><button class="button ghost load-more-btn" data-type="category">Load More</button></div>`:''}`}</section>`;
   }
 
-  function podcast(articles, hasMore) {
-    if (!articles) return `<div class="loading">Loading&hellip;</div>`;
-    return `<section class="section"><div class="section-head"><h2>Podcast</h2><div class="line"></div></div><div class="podcast-intro"><p>Explore immersive stories from the Podcast category.</p></div>${!articles.length?`<div class="empty-state">Nothing in Podcast yet.</div>`:`<div class="grid">${articles.map(card).join('')}</div>${hasMore?`<div class="load-more-wrap"><button class="button ghost load-more-btn" data-type="category">Load More</button></div>`:''}`}</section>`;
+  // ── Magazines ──────────────────────────────────────────────
+  function magazineCard(m) {
+    const cover = m.coverUrl || '/images/logo.png';
+    return `<div class="magazine-card" data-nav="magazine" data-id="${esc(m.id)}">
+      <div class="magazine-card-cover"><img src="${esc(cover)}" alt="${esc(m.title)}" loading="lazy" /></div>
+      <h3 class="magazine-card-title">${esc(m.title)}</h3>
+      ${m.dek ? `<p class="magazine-card-dek">${esc(m.dek)}</p>` : ''}
+    </div>`;
+  }
+
+  function magazines(list, isEditor = false) {
+    if (!list) return `<div class="loading">Loading&hellip;</div>`;
+    const uploadBtn = isEditor ? `<button class="button ghost" data-nav="upload-magazine" style="margin-left:auto">Upload Issue</button>` : '';
+    return `<section class="section">
+      <div class="section-head"><h2>Magazines</h2><div class="line"></div>${uploadBtn}</div>
+      ${!list.length
+        ? `<div class="empty-state">No issues uploaded yet.</div>`
+        : `<div class="magazine-grid">${list.map(magazineCard).join('')}</div>`
+      }
+    </section>`;
+  }
+
+  function magazineDetail(m, isEditor = false) {
+    if (!m) return `<div class="loading">Loading&hellip;</div>`;
+    const cover = m.coverUrl || '/images/logo.png';
+    const editorControls = isEditor ? `<div class="editor-controls"><button class="button ghost delete-magazine-btn" data-id="${esc(m.id)}" style="border-color:#B23A48;color:#B23A48">Delete</button></div>` : '';
+    return `
+      <div class="article-page magazine-detail">
+        <button class="back-link" data-nav="magazines">&#8592; Back to Magazines</button>
+        ${editorControls}
+        <div class="magazine-detail-cover"><img src="${esc(cover)}" alt="${esc(m.title)}" /></div>
+        <h1 class="article-title">${esc(m.title)}</h1>
+        ${m.dek ? `<p class="article-dek">${esc(m.dek)}</p>` : ''}
+        <div class="article-body">${m.richBody || ''}</div>
+      </div>`;
+  }
+
+  function uploadMagazine(error = '') {
+    return `
+      <div class="form-page">
+        <h1>Upload Issue</h1>
+        <p class="form-sub">Add a new magazine issue — cover image, write-up, and any images across the body.</p>
+        <form id="upload-magazine-form" novalidate enctype="multipart/form-data">
+          <div class="field"><label>Title</label><input id="f-mag-title" type="text" /></div>
+          <div class="field"><label>Short Description</label><input id="f-mag-dek" type="text" /></div>
+          <div class="field"><label>Cover Image</label><input id="f-mag-cover" type="file" accept="image/*" /></div>
+          <div class="field"><label>Body Images <span class="field-hint">(optional — insert into the write-up below via the image button in the toolbar)</span></label><input id="f-mag-body-images" type="file" accept="image/*" multiple /></div>
+          <div class="field"><label>Issue Write-up</label><div id="quill-container" class="quill-editor"></div></div>
+          ${error?`<p class="error-text">${esc(error)}</p>`:''}
+          <button class="button" type="submit">Publish Issue</button>
+        </form>
+      </div>`;
   }
 
   // ── Article ───────────────────────────────────────────────
@@ -607,7 +692,8 @@ const Render = (() => {
   }
 
   return { header, footer, home, category, article, search, auth, forgotPassword, resetPassword,
-           submit, mine, resubmit, review, manage, editArticle, subscribers, gate };
+           submit, mine, resubmit, review, manage, editArticle, subscribers, gate,
+           magazines, magazineDetail, uploadMagazine };
 })();
 
 // ============================================================
@@ -632,6 +718,9 @@ const Render = (() => {
     _editData: null, _editError: '',
     _resubmitData: null, _resubmitError: '',
     _subscribersData: null,
+    _magazinesData: null,
+    _magazineDetail: null,
+    _uploadMagazineError: '',
     _forgotSuccess: false, _forgotError: '',
     _resetSuccess: false, _resetError: '',
     subscribeMsg: '', subscribeError: false,
@@ -659,7 +748,6 @@ const Render = (() => {
     switch (v.name) {
       case 'home':            return Render.home(state.articles, state._hasMore);
       case 'category':        return Render.category(state._categoryName, state._categoryData, state._categoryHasMore);
-      case 'podcast':         return Render.podcast(state._categoryData, state._categoryHasMore);
       case 'article':         return Render.article(state._articleData, ed);
       case 'auth':            return Render.auth(state.authMode, state._authError);
       case 'search':          return Render.search(state._searchResults, state._searchQuery);
@@ -672,6 +760,9 @@ const Render = (() => {
       case 'manage':          return ed ? Render.manage(state._manageData) : Render.gate('Manage','Editor access required.');
       case 'edit-article':    return ed ? Render.editArticle(state._editData, state._editError) : Render.gate('Edit','Editor access required.');
       case 'subscribers':     return ed ? Render.subscribers(state._subscribersData) : Render.gate('Subscribers','Editor access required.');
+      case 'magazines':       return Render.magazines(state._magazinesData, ed);
+      case 'magazine':        return Render.magazineDetail(state._magazineDetail, ed);
+      case 'upload-magazine': return ed ? Render.uploadMagazine(state._uploadMagazineError) : Render.gate('Upload Issue','Editor access required.');
       default:                return Render.home(state.articles, state._hasMore);
     }
   }
@@ -703,11 +794,6 @@ const Render = (() => {
       try { const r = await Articles.listByCategory(viewObj.cat, 0); state._categoryData = r.articles||[]; state._categoryHasMore = r.hasMore||false; } catch { state._categoryData = []; }
       paint();
     }
-    if (viewObj.name === 'podcast') {
-      state._categoryName = 'Podcast'; state._categoryData = null; state._categoryPage = 0; state._categoryHasMore = false;
-      try { const r = await Articles.listByCategory('Podcast', 0); state._categoryData = r.articles||[]; state._categoryHasMore = r.hasMore||false; } catch { state._categoryData = []; }
-      paint();
-    }
     if (viewObj.name === 'search') {
       state._searchQuery   = viewObj.q || '';
       state._searchResults = null;
@@ -721,6 +807,16 @@ const Render = (() => {
     if (viewObj.name === 'review')       { state._reviewData = null;      try { state._reviewData      = await Submissions.queue(tok);    } catch { state._reviewData = []; }       paint(); }
     if (viewObj.name === 'manage')       { state._manageData = null;      try { const r = await Articles.list(0); state._manageData = r.articles||[]; } catch { state._manageData = []; } paint(); }
     if (viewObj.name === 'subscribers')  { state._subscribersData = null; try { state._subscribersData = await Subscribers.list(tok);    } catch { state._subscribersData = []; }  paint(); }
+    if (viewObj.name === 'magazines') {
+      state._magazinesData = null;
+      try { state._magazinesData = await Magazines.list(); } catch { state._magazinesData = []; }
+      paint();
+    }
+    if (viewObj.name === 'magazine' && viewObj.id) {
+      state._magazineDetail = null;
+      try { state._magazineDetail = await Magazines.get(viewObj.id); } catch { state._magazineDetail = null; }
+      paint();
+    }
     if (viewObj.name === 'resubmit' && viewObj.id) {
       state._resubmitData = null;
       try { state._resubmitData = await Submissions.get(viewObj.id, tok); } catch { state._resubmitData = null; }
@@ -748,7 +844,7 @@ const Render = (() => {
     e.preventDefault();
     const viewName = el.dataset.nav || el.dataset.view;
     const navObj = viewName === 'podcast'
-      ? { name: 'podcast' }
+      ? { name: 'category', cat: 'Podcast' }
       : { name: viewName, id: el.dataset.id, cat: el.dataset.cat };
     navigate(navObj);
   }
@@ -803,11 +899,29 @@ const Render = (() => {
       const url = URL.createObjectURL(file);
       return `
         <div class="preview-thumb ${idx===0?'primary':''}" data-index="${idx}">
-          <img src="${url}" alt="Selected image ${idx+1}" />
+          <img src="${url}" alt="Selected image ${idx+1}" class="preview-thumb-img" data-full="${url}" />
           <button type="button" class="preview-remove" data-index="${idx}" aria-label="Remove image ${idx+1}">×</button>
           ${idx===0?`<span class="preview-label">Primary</span>`:''}
         </div>`;
     }).join('');
+  }
+
+  function openImageLightbox(src) {
+    let lb = document.getElementById('image-lightbox');
+    if (!lb) {
+      lb = document.createElement('div');
+      lb.id = 'image-lightbox';
+      lb.className = 'image-lightbox';
+      lb.innerHTML = `<button type="button" class="image-lightbox-close" aria-label="Close">×</button><img class="image-lightbox-img" alt="Full size preview" />`;
+      document.body.appendChild(lb);
+      lb.addEventListener('click', (e) => {
+        if (e.target === lb || e.target.classList.contains('image-lightbox-close')) {
+          lb.classList.remove('open');
+        }
+      });
+    }
+    lb.querySelector('.image-lightbox-img').src = src;
+    lb.classList.add('open');
   }
 
   function setupArticleDetailCover(imageUrls, title) {
@@ -850,36 +964,6 @@ const Render = (() => {
     selectedImages = selectedImages.filter((_, idx) => idx !== index);
     renderImagePreviewStrip();
   }
-
-  function openImageLightbox(url) {
-    const overlay = document.createElement('div');
-    overlay.className = 'image-lightbox';
-    overlay.innerHTML = `
-      <div class="image-lightbox-backdrop"></div>
-      <div class="image-lightbox-frame">
-        <button type="button" class="image-lightbox-close" aria-label="Close preview">×</button>
-        <img src="${url}" alt="Full-size preview" />
-      </div>`;
-    document.body.appendChild(overlay);
-
-    const cleanup = () => {
-      document.body.removeChild(overlay);
-      document.removeEventListener('keydown', keyHandler);
-      URL.revokeObjectURL(url);
-    };
-
-    const keyHandler = (event) => {
-      if (event.key === 'Escape') cleanup();
-    };
-
-    overlay.addEventListener('click', (event) => {
-      if (event.target === overlay || event.target.classList.contains('image-lightbox-close')) {
-        cleanup();
-      }
-    });
-    document.addEventListener('keydown', keyHandler);
-  }
-
   function toggleVideoUrlField(selectId, fieldId = 'video-url-field') {
     const select = document.getElementById(selectId);
     const field = document.getElementById(fieldId);
@@ -1000,6 +1084,48 @@ const Render = (() => {
     try { await Articles.update(id, { title, dek, category: cat, coverImage: cover, videoUrl, richBody }, state.session.token); showToast('Article updated.'); state.articles = null; navigate({ name: 'manage' }); }
     catch (err) { state._editError = err.message; paint(); }
   }
+
+  async function handleUploadMagazine(e) {
+    e.preventDefault();
+    const title       = document.getElementById('f-mag-title')?.value.trim();
+    const dek         = document.getElementById('f-mag-dek')?.value.trim();
+    const coverFile   = document.getElementById('f-mag-cover')?.files?.[0];
+    const bodyFiles   = document.getElementById('f-mag-body-images')?.files;
+    const richBody    = getQuillHtml();
+    if (!title) { state._uploadMagazineError = 'Title is required.'; paint(); return; }
+    const formData = new FormData();
+    formData.append('title', title);
+    formData.append('dek', dek || '');
+    formData.append('richBody', richBody);
+    if (coverFile) formData.append('cover', coverFile);
+    if (bodyFiles) Array.from(bodyFiles).forEach(f => formData.append('bodyImages', f));
+    try {
+      const res = await fetch(BASE + '/magazines', {
+        method: 'POST',
+        headers: state.session?.token ? { 'Authorization': `Bearer ${state.session.token}` } : undefined,
+        body: formData
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || 'Upload failed.');
+      }
+      showToast('Issue published.');
+      navigate({ name: 'magazines' });
+    } catch (err) {
+      state._uploadMagazineError = err.message;
+      paint();
+    }
+  }
+
+  async function handleDeleteMagazine(id) {
+    if (!confirm('Permanently delete this issue? This cannot be undone.')) return;
+    try {
+      await Magazines.delete(id, state.session.token);
+      showToast('Issue deleted.');
+      navigate({ name: 'magazines' });
+    } catch (err) { showToast(err.message); }
+  }
+
   async function handleSubscribe() {
     const email = document.getElementById('subscribe-email')?.value.trim();
     if (!email || !email.includes('@')) { state.subscribeMsg = 'Please enter a valid email address.'; state.subscribeError = true; $footer.innerHTML = Render.footer(state.subscribeMsg, state.subscribeError); bindEvents(); return; }
@@ -1055,7 +1181,7 @@ const Render = (() => {
 
     // Init Quill if present (submit, resubmit, edit forms)
     if (document.getElementById('quill-container')) {
-      initQuill('quill-container', state._quillInit);
+      initQuill('quill-container', state._quillInit, state.session?.token || '');
     }
 
     $main.addEventListener('click', e => {
@@ -1070,6 +1196,7 @@ const Render = (() => {
       if (t('.republish-btn'))        { handleRepublish(t('.republish-btn').dataset.id); return; }
       if (t('.edit-article-btn'))     { navigate({ name:'edit-article', id: t('.edit-article-btn').dataset.id }); return; }
       if (t('.delete-article-btn'))   { handleDeleteArticle(t('.delete-article-btn').dataset.id); return; }
+      if (t('.delete-magazine-btn'))  { handleDeleteMagazine(t('.delete-magazine-btn').dataset.id); return; }
       if (t('.resubmit-btn'))         { navigate({ name:'resubmit', id: t('.resubmit-btn').dataset.id }); return; }
       if (t('.withdraw-btn'))         { handleWithdraw(t('.withdraw-btn').dataset.id); return; }
       if (t('.load-more-btn'))        { handleLoadMore(t('.load-more-btn').dataset.type); return; }
@@ -1086,17 +1213,13 @@ const Render = (() => {
         if (!Number.isNaN(index)) removeSelectedImage(index);
         return;
       }
-      const thumb = e.target.closest('.preview-thumb');
-      if (thumb) {
-        const index = Number(thumb.dataset.index);
-        if (!Number.isNaN(index) && selectedImages[index]) {
-          openImageLightbox(URL.createObjectURL(selectedImages[index]));
-        }
-      }
+      const img = e.target.closest('.preview-thumb-img');
+      if (img) openImageLightbox(img.dataset.full || img.src);
     });
     document.getElementById('submit-form')?.addEventListener('submit', handleSubmit);
     document.getElementById('resubmit-form')?.addEventListener('submit', handleResubmit);
     document.getElementById('edit-article-form')?.addEventListener('submit', handleEditArticle);
+    document.getElementById('upload-magazine-form')?.addEventListener('submit', handleUploadMagazine);
     document.getElementById('subscribe-btn')?.addEventListener('click', handleSubscribe);
     document.getElementById('subscribe-email')?.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); handleSubscribe(); } });
   }
