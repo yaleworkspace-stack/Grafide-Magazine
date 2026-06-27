@@ -11,7 +11,7 @@
 const _LOCAL = ['localhost', '127.0.0.1'].includes(window.location.hostname);
 const BASE = _LOCAL
   ? 'http://localhost:8080/api'
-  : 'https://grafide-magazine.onrender.com/api';
+  : 'https://grafide-magazine-backend.onrender.com/api';
 
 // ── API helpers ────────────────────────────────────────────────
 async function _request(method, path, body, token) {
