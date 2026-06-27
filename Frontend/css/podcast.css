@@ -1,0 +1,176 @@
+/* ============================================================
+   GRAFIDE — podcast.css
+   Podcast page styles
+   ============================================================ */
+
+/* ── Podcast hero ───────────────────────────────────────────── */
+.podcast-hero {
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+  padding: 56px 48px 52px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.podcast-hero-art {
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+  background: var(--line);
+}
+.podcast-hero-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.podcast-hero-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.podcast-hero-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(2rem, 5vmin, 3.2rem);
+  color: #fff;
+  font-weight: 400;
+  margin-bottom: 14px;
+  line-height: 1.1;
+}
+.podcast-hero-dek {
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.6;
+  max-width: 52ch;
+  margin-bottom: 22px;
+}
+
+/* Streaming platform links */
+.podcast-platforms {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.platform-link {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  padding: 7px 16px;
+  border-radius: 20px;
+  text-decoration: none;
+  transition: background var(--transition), border-color var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.platform-link:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.6); }
+
+/* ── Episode list ───────────────────────────────────────────── */
+.episode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.episode-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 20px;
+  align-items: center;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  transition: background var(--transition);
+}
+.episode-card:last-child { border-bottom: none; }
+.episode-card:hover      { background: rgba(91,196,232,0.04); }
+
+.episode-num {
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--cobalt);
+  text-transform: uppercase;
+  min-width: 3ch;
+  text-align: right;
+  font-weight: 500;
+}
+.episode-meta { min-width: 0; }
+.episode-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.15rem;
+  color: var(--navy);
+  margin-bottom: 6px;
+  font-weight: 400;
+  line-height: 1.3;
+}
+.episode-dek {
+  font-size: 0.88rem;
+  color: var(--muted);
+  font-weight: 300;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.episode-date {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* ── Episode detail ─────────────────────────────────────────── */
+.episode-detail-page {
+  max-width: var(--article-max);
+  margin: 0 auto;
+  padding: 48px 24px 88px;
+}
+.episode-embed {
+  margin: 28px 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--line);
+  aspect-ratio: 16/3;
+}
+.episode-embed iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+.episode-detail-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(1.8rem, 4vmin, 2.6rem);
+  color: var(--navy);
+  margin-bottom: 14px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+.episode-detail-byline {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .podcast-hero               { grid-template-columns: 1fr; gap: 24px; padding: 36px 24px; }
+  .podcast-hero-art           { width: 120px; height: 120px; }
+  .episode-card               { grid-template-columns: auto 1fr; }
+  .episode-date               { display: none; }
+}
+@media (max-width: 600px) {
+  .episode-card               { gap: 14px; padding: 18px 0; }
+  .podcast-hero-art           { width: 96px; height: 96px; }
+}

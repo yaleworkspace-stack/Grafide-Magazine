@@ -1,0 +1,139 @@
+/* ============================================================
+   GRAFIDE — static.css
+   About, Contact, Terms, Privacy, Cookies, Work With Us
+   ============================================================ */
+
+/* ── Static page shell ──────────────────────────────────────── */
+.static-page {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 64px 24px 96px;
+}
+.static-page h1 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(2.2rem, 5vmin, 3.2rem);
+  color: var(--navy);
+  margin-bottom: 10px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+.static-eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.static-lead {
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: var(--muted);
+  line-height: 1.7;
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--line);
+  max-width: 58ch;
+}
+.static-body h2 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.5rem;
+  color: var(--navy);
+  margin: 36px 0 10px;
+  font-weight: 400;
+}
+.static-body p {
+  font-size: 1rem;
+  font-weight: 300;
+  color: var(--ink);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+.static-body ul {
+  margin: 0 0 20px 24px;
+  list-style: disc;
+  font-size: 1rem;
+  font-weight: 300;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.static-body a { color: var(--cobalt); text-decoration: underline; }
+
+/* ── About — values grid ────────────────────────────────────── */
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin: 36px 0 48px;
+}
+.value-card {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+.value-card .diamond { margin-bottom: 14px; display: block; }
+.value-card h3 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.15rem;
+  color: var(--navy);
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+.value-card p {
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.6;
+  font-weight: 300;
+  margin: 0;
+}
+
+/* ── Work With Us — roles ───────────────────────────────────── */
+.roles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 24px 0 40px;
+}
+.role-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.role-row:last-child { border-bottom: none; }
+.role-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.1rem;
+  color: var(--navy);
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+.role-type {
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── Contact form ───────────────────────────────────────────── */
+.contact-success {
+  border: 1px solid var(--cobalt);
+  background: rgba(91,196,232,0.08);
+  padding: 24px;
+  border-radius: var(--radius-sm);
+  margin-top: 24px;
+  font-size: 1rem;
+  line-height: 1.6;
+  display: none;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .values-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Submit — Grafide</title>
+  <meta name="description" content="Submit your article to Grafide Magazine." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/submit.css" />
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <main id="main-content">
+
+    <!-- ── SUBMIT FORM ── -->
+    <div id="view-submit">
+      <div class="form-page">
+        <h1>Submit an Article</h1>
+        <p class="form-sub">
+          Share your work with the Grafide community. Our editors review every submission and will be in touch.
+        </p>
+        <div id="submit-error"   class="error-text"  style="display:none;"></div>
+        <div id="submit-success" class="success-box"  style="display:none;"></div>
+
+        <div class="field">
+          <label>Article Title</label>
+          <input type="text" id="f-title" placeholder="Your article title" />
+        </div>
+        <div class="field">
+          <label>Subtitle / Deck</label>
+          <input type="text" id="f-dek" placeholder="A short description of your article" />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="f-category">
+            <option value="">Select a category</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Lifestyle">Lifestyle</option>
+            <option value="Photography">Photography</option>
+            <option value="Culture">Culture</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Cover Images <span class="field-hint">(up to 5, first is the main cover)</span></label>
+          <input type="file" id="f-covers" accept="image/*" multiple />
+          <div class="cover-previews" id="cover-previews"></div>
+        </div>
+        <div class="field">
+          <label>Article Body</label>
+          <div id="submit-quill" class="submit-quill"></div>
+        </div>
+
+        <button class="btn" id="submit-btn">Submit Article</button>
+        <p style="margin-top:16px;">
+          <a href="/pages/submit.html?view=mine" class="back-link" style="margin:0">View My Submissions &#8594;</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- ── MY SUBMISSIONS ── -->
+    <div id="view-mine" style="display:none;">
+      <div class="form-page" style="max-width:860px;">
+        <a class="back-link" href="/pages/submit.html">&#8592; Submit New Article</a>
+        <h1>My Submissions</h1>
+        <div class="loading"          id="mine-loading">Loading&hellip;</div>
+        <div class="empty-state"      id="mine-empty"   style="display:none;">You haven't submitted anything yet.</div>
+        <div class="submissions-list" id="mine-list"    style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- ── RESUBMIT ── -->
+    <div id="view-resubmit" style="display:none;">
+      <div class="form-page">
+        <a class="back-link" href="/pages/submit.html?view=mine">&#8592; My Submissions</a>
+        <h1>Revise &amp; Resubmit</h1>
+        <p class="form-sub">Make the requested changes and resubmit for review.</p>
+        <div id="resub-error" class="error-text" style="display:none;"></div>
+
+        <div class="field">
+          <label>Article Title</label>
+          <input type="text" id="f-resub-title" />
+        </div>
+        <div class="field">
+          <label>Subtitle / Deck</label>
+          <input type="text" id="f-resub-dek" />
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="f-resub-category">
+            <option value="Fashion">Fashion</option>
+            <option value="Lifestyle">Lifestyle</option>
+            <option value="Photography">Photography</option>
+            <option value="Culture">Culture</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Article Body</label>
+          <div id="resub-quill" class="submit-quill"></div>
+        </div>
+
+        <button class="btn" id="resub-btn">Resubmit</button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/submit.js"></script>
+</body>
+</html>

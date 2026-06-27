@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Search — Grafide</title>
+  <meta name="description" content="Search Grafide articles." />
+  <meta name="robots" content="noindex" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/search.css" />
+  <link rel="stylesheet" href="../css/home.css" /><!-- article card styles -->
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <main id="main-content">
+    <div class="search-page">
+
+      <!-- Search bar -->
+      <div class="search-bar-wrap">
+        <h1>Search</h1>
+        <form class="search-bar" id="search-form" role="search">
+          <input
+            type="search"
+            class="search-bar-input"
+            id="search-input"
+            placeholder="Search articles, topics, authors…"
+            aria-label="Search"
+            autocomplete="off"
+          />
+          <button type="submit" class="search-bar-btn">Search</button>
+        </form>
+      </div>
+
+      <!-- Results meta -->
+      <div id="search-meta" class="search-meta" style="display:none;"></div>
+
+      <!-- Loading -->
+      <div class="loading" id="search-loading" style="display:none;">Searching&hellip;</div>
+
+      <!-- Results grid -->
+      <div class="search-grid" id="search-grid"></div>
+
+      <!-- Empty state -->
+      <div class="search-empty" id="search-empty" style="display:none;">
+        <h2>No results found</h2>
+        <p>
+          We couldn't find anything matching <strong id="empty-query"></strong>.<br />
+          Try a different keyword or browse by category.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap;">
+          <a href="/pages/fashion.html"     class="btn ghost sm">Fashion</a>
+          <a href="/pages/lifestyle.html"   class="btn ghost sm">Lifestyle</a>
+          <a href="/pages/photography.html" class="btn ghost sm">Photography</a>
+          <a href="/pages/culture.html"     class="btn ghost sm">Culture</a>
+        </div>
+      </div>
+
+      <!-- Initial prompt (no query yet) -->
+      <div class="search-empty" id="search-prompt">
+        <h2>What are you looking for?</h2>
+        <p>Enter a keyword above to search across all Grafide articles.</p>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="../js/shared.js"></script>
+  <script src="../js/search.js"></script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+/* ============================================================
+   GRAFIDE — article.css
+   Article detail page styles
+   ============================================================ */
+
+/* ── Article page wrapper ───────────────────────────────────── */
+.article-page {
+  max-width: var(--article-max);
+  margin: 0 auto;
+  padding: 48px 24px 88px;
+}
+
+/* ── Cover / slideshow ──────────────────────────────────────── */
+.article-cover-wrap {
+  aspect-ratio: 16/9;
+  overflow: hidden;
+  margin-bottom: 32px;
+  background: var(--line);
+  border-radius: var(--radius-sm);
+}
+.article-cover-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Slideshow (multiple covers) */
+.detail-slideshow { position: relative; margin-bottom: 32px; }
+.slideshow-frame  { position: relative; aspect-ratio: 16/9; overflow: hidden; border-radius: var(--radius-sm); }
+.slideshow-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: opacity 0.3s ease;
+}
+.slideshow-control {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255,255,255,0.92);
+  border: none;
+  color: var(--navy);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  transition: background var(--transition);
+}
+.slideshow-control:hover { background: #fff; }
+.slideshow-control.prev  { left: 14px; }
+.slideshow-control.next  { right: 14px; }
+
+.slideshow-thumbs {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.slideshow-thumb {
+  border: 2px solid transparent;
+  padding: 2px;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  transition: border-color var(--transition);
+}
+.slideshow-thumb.active { border-color: var(--navy); }
+.slideshow-thumb img {
+  width: 96px;
+  height: 60px;
+  object-fit: cover;
+  display: block;
+  border-radius: 4px;
+}
+
+/* No-cover fallback */
+.article-cover-fallback {
+  aspect-ratio: 16/9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  background: var(--line);
+  border-radius: var(--radius-sm);
+  margin-bottom: 32px;
+  font-size: 0.9rem;
+}
+
+/* ── Article meta ───────────────────────────────────────────── */
+.article-category {
+  font-size: 0.75rem;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+  margin-bottom: 14px;
+}
+.article-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(2rem, 5vmin, 3rem);
+  color: var(--navy);
+  line-height: 1.1;
+  margin-bottom: 16px;
+  font-weight: 400;
+}
+.article-dek {
+  font-size: 1.15rem;
+  font-weight: 300;
+  color: var(--muted);
+  margin-bottom: 18px;
+  line-height: 1.6;
+}
+.article-byline {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--navy);
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 32px;
+}
+
+/* ── Editor controls ────────────────────────────────────────── */
+.editor-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+
+/* ── Related articles ───────────────────────────────────────── */
+.related-section {
+  border-top: 1px solid var(--line);
+  margin-top: 64px;
+  padding-top: 48px;
+  padding-bottom: 64px;
+}
+.related-section .section-head { margin-bottom: 28px; }
+.related-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .article-page   { padding: 32px 20px 64px; }
+  .related-grid   { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 600px) {
+  .article-title  { font-size: 1.8rem; }
+  .related-grid   { grid-template-columns: 1fr; }
+  .slideshow-thumb img { width: 72px; height: 46px; }
+}

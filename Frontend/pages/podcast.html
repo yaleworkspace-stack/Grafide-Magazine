@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Podcast — Grafide</title>
+  <meta name="description" content="The Grafide Podcast — conversations on fashion, culture, and creativity." />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:site_name"   content="Grafide" />
+  <meta property="og:title"       content="Podcast — Grafide" />
+  <meta property="og:description" content="The Grafide Podcast — conversations on fashion, culture, and creativity." />
+  <meta property="og:image"       content="/images/logo.png" />
+
+  <meta name="twitter:card"  content="summary_large_image" />
+  <meta name="twitter:site"  content="@grafidemagazine" />
+  <meta name="twitter:title" content="Podcast — Grafide" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/podcast.css" />
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <main id="main-content">
+
+    <!-- ── LISTING VIEW ── -->
+    <div id="view-listing">
+
+      <!-- Hero -->
+      <div class="podcast-hero">
+        <div class="podcast-hero-art">
+          <img src="/images/logo.png" alt="Grafide Podcast" id="podcast-hero-art" />
+        </div>
+        <div>
+          <p class="podcast-hero-label"><span class="diamond"></span> Podcast</p>
+          <h1 class="podcast-hero-title">The Grafide Podcast</h1>
+          <p class="podcast-hero-dek">
+            Deep conversations with the designers, photographers, and creatives shaping fashion and culture today.
+          </p>
+          <div class="podcast-platforms">
+            <a href="https://open.spotify.com/show/grafide" target="_blank" rel="noopener" class="platform-link">
+              &#9654; Spotify
+            </a>
+            <a href="https://podcasts.apple.com/grafide" target="_blank" rel="noopener" class="platform-link">
+              &#9654; Apple Podcasts
+            </a>
+            <a href="https://www.youtube.com/@grafidemagazines" target="_blank" rel="noopener" class="platform-link">
+              &#9654; YouTube
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Episode list -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Episodes</h2>
+          <div class="line"></div>
+          <!-- Editor: add episode button injected by JS -->
+          <div id="editor-add-btn"></div>
+        </div>
+
+        <div class="loading"      id="pod-loading">Loading&hellip;</div>
+        <div class="empty-state"  id="pod-empty"   style="display:none;">No episodes yet — check back soon.</div>
+        <div class="episode-list" id="episode-list" style="display:none;"></div>
+
+        <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
+          <button class="btn ghost" id="load-more-btn">Load More</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── EPISODE DETAIL VIEW ── -->
+    <div id="view-detail" style="display:none;">
+      <div class="episode-detail-page">
+        <a class="back-link" href="/pages/podcast.html">&#8592; Back to Episodes</a>
+
+        <!-- Editor controls -->
+        <div class="editor-controls" id="detail-editor-controls" style="display:none;">
+          <button class="btn danger sm" id="detail-delete-btn">Delete Episode</button>
+        </div>
+
+        <h1 class="episode-detail-title" id="detail-title"></h1>
+        <p  class="episode-detail-byline" id="detail-byline"></p>
+
+        <!-- Embedded player (Spotify / Apple / YouTube) -->
+        <div class="episode-embed" id="detail-embed" style="display:none;"></div>
+
+        <!-- Body text -->
+        <div class="article-body" id="detail-body"></div>
+      </div>
+    </div>
+
+    <!-- ── ADD EPISODE VIEW (editor only) ── -->
+    <div id="view-add" style="display:none;">
+      <div class="form-page">
+        <a class="back-link" href="/pages/podcast.html">&#8592; Back to Episodes</a>
+        <h1>Add Episode</h1>
+        <p class="form-sub">Publish a new podcast episode to Grafide.</p>
+
+        <div id="add-error" class="error-text" style="display:none;"></div>
+
+        <div class="field">
+          <label>Episode Title</label>
+          <input type="text" id="f-ep-title" placeholder="e.g. The Language of Fashion with Amara Osei" />
+        </div>
+        <div class="field">
+          <label>Short Description</label>
+          <input type="text" id="f-ep-dek" placeholder="One sentence about this episode" />
+        </div>
+        <div class="field">
+          <label>Embed URL <span class="field-hint">(Spotify, Apple Podcasts, or YouTube link)</span></label>
+          <input type="url" id="f-ep-embed" placeholder="https://open.spotify.com/episode/…" />
+        </div>
+        <div class="field">
+          <label>Episode Notes <span class="field-hint">(optional)</span></label>
+          <textarea id="f-ep-body" placeholder="Show notes, timestamps, links…"></textarea>
+        </div>
+
+        <button class="btn" id="add-submit-btn">Publish Episode</button>
+      </div>
+    </div>
+
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="../js/shared.js"></script>
+  <script src="../js/podcast.js"></script>
+</body>
+</html>

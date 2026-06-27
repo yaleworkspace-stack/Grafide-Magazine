@@ -1,0 +1,103 @@
+/* ============================================================
+   GRAFIDE — search.css
+   Search results page
+   ============================================================ */
+
+.search-page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 48px 48px 88px;
+}
+
+/* ── Search bar ─────────────────────────────────────────────── */
+.search-bar-wrap {
+  margin-bottom: 48px;
+}
+.search-bar-wrap h1 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(1.8rem, 4vmin, 2.8rem);
+  color: var(--navy);
+  font-weight: 400;
+  margin-bottom: 20px;
+}
+.search-bar {
+  display: flex;
+  border: 1px solid var(--navy);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  max-width: 600px;
+}
+.search-bar-input {
+  flex: 1;
+  font-family: 'Jost', sans-serif;
+  font-size: 1rem;
+  padding: 14px 18px;
+  border: none;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+}
+.search-bar-input::placeholder { color: var(--muted); }
+.search-bar-btn {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 14px 24px;
+  background: var(--navy);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition);
+  white-space: nowrap;
+}
+.search-bar-btn:hover { background: var(--navy-deep); }
+
+/* ── Results meta ───────────────────────────────────────────── */
+.search-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.search-meta strong { color: var(--navy); }
+
+/* ── Results grid — same card pattern as home ───────────────── */
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 36px;
+}
+
+/* ── No results ─────────────────────────────────────────────── */
+.search-empty {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--muted);
+}
+.search-empty h2 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.8rem;
+  color: var(--navy);
+  font-weight: 400;
+  margin-bottom: 12px;
+}
+.search-empty p { font-weight: 300; line-height: 1.7; }
+
+/* ── Highlight matched terms ────────────────────────────────── */
+mark {
+  background: rgba(91, 196, 232, 0.25);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .search-page { padding: 32px 24px 64px; }
+  .search-grid  { grid-template-columns: 1fr 1fr; gap: 24px; }
+}
+@media (max-width: 600px) {
+  .search-grid  { grid-template-columns: 1fr; gap: 28px; }
+}

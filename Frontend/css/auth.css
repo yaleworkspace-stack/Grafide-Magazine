@@ -1,0 +1,97 @@
+/* ============================================================
+   GRAFIDE — auth.css
+   Auth pages: sign in, register, forgot password, reset password
+   ============================================================ */
+
+/* ── Auth shell ─────────────────────────────────────────────── */
+.auth-page {
+  min-height: calc(100dvh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+.auth-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 36px;
+}
+.auth-logo img {
+  height: 36px;
+  mix-blend-mode: multiply;
+}
+.auth-card h1 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 2rem;
+  color: var(--navy);
+  margin-bottom: 6px;
+  font-weight: 400;
+  text-align: center;
+}
+.auth-sub {
+  font-size: 0.9rem;
+  font-weight: 300;
+  color: var(--muted);
+  text-align: center;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+/* ── Auth form ──────────────────────────────────────────────── */
+.auth-form { display: flex; flex-direction: column; gap: 0; }
+.auth-form .field { margin-bottom: 18px; }
+
+.auth-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 14px;
+  font-size: 0.82rem;
+}
+
+/* ── Auth footer links ──────────────────────────────────────── */
+.auth-footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.auth-footer a {
+  color: var(--navy);
+  text-decoration: underline;
+  transition: color var(--transition);
+}
+.auth-footer a:hover { color: var(--cobalt); }
+
+/* ── Error / success banners ────────────────────────────────── */
+.auth-error {
+  background: #FBE6E6;
+  color: #B23A48;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 18px;
+  display: none;
+}
+.auth-success {
+  background: #E1F4ED;
+  color: #1F7A5C;
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 18px;
+  display: none;
+}
+
+/* ── Editor code field (register only) ─────────────────────── */
+.editor-code-field { margin-top: 4px; }
+.editor-code-hint {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 6px;
+}

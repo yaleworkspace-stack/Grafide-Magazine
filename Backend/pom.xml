@@ -2,17 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <!-- ── Coordinates ──────────────────────────────────────── -->
-  <groupId>com.grafide</groupId>
-  <artifactId>grafide-api</artifactId>
-  <version>1.0.0</version>
-  <packaging>jar</packaging>
-  <name>Grafide API</name>
-
-  <!-- ── Spring Boot parent (manages all dependency versions) -->
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
@@ -20,32 +12,43 @@
     <relativePath/>
   </parent>
 
-  <!-- ── Java version ─────────────────────────────────────── -->
+  <groupId>com.grafide</groupId>
+  <artifactId>grafide-magazine</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <name>grafide-magazine</name>
+  <description>Grafide Magazine API</description>
+
   <properties>
     <java.version>17</java.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
-  <!-- ── Dependencies ─────────────────────────────────────── -->
   <dependencies>
 
-    <!-- Spring Boot starters -->
+    <!-- Web -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-mongodb</artifactId>
-    </dependency>
+
+    <!-- Security -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
+
+    <!-- MongoDB -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-mongodb</artifactId>
+    </dependency>
+
+    <!-- Validation -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
+
+    <!-- Mail (optional — reset links) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-mail</artifactId>
@@ -55,26 +58,26 @@
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-api</artifactId>
-      <version>0.12.5</version>
+      <version>0.11.5</version>
     </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-impl</artifactId>
-      <version>0.12.5</version>
+      <version>0.11.5</version>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>io.jsonwebtoken</groupId>
       <artifactId>jjwt-jackson</artifactId>
-      <version>0.12.5</version>
+      <version>0.11.5</version>
       <scope>runtime</scope>
     </dependency>
 
-    <!-- Cloudinary -->
+    <!-- Cloudinary image uploads -->
     <dependency>
       <groupId>com.cloudinary</groupId>
-      <artifactId>cloudinary-http44</artifactId>
-      <version>1.36.0</version>
+      <artifactId>cloudinary-http45</artifactId>
+      <version>1.38.0</version>
     </dependency>
 
     <!-- Lombok -->
@@ -93,15 +96,12 @@
 
   </dependencies>
 
-  <!-- ── Build ────────────────────────────────────────────── -->
   <build>
     <plugins>
-      <!-- Spring Boot Maven Plugin — produces the executable fat-jar -->
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
-          <!-- Strip Lombok from the packaged jar -->
           <excludes>
             <exclude>
               <groupId>org.projectlombok</groupId>
@@ -112,38 +112,5 @@
       </plugin>
     </plugins>
   </build>
-
-  <!-- ── Profiles ─────────────────────────────────────────── -->
-  <!--
-    "local"  — native Windows dev via:
-               mvn spring-boot:run -Dspring-boot.run.profiles=local
-               Targets localhost MongoDB. No Docker. No Atlas.
-
-    "prod"   — cloud / Docker build via:
-               mvn package -Pprod -DskipTests
-               SPRING_PROFILES_ACTIVE=prod injected by the Dockerfile.
-               All secrets come from Render environment variables.
-  -->
-  <profiles>
-
-    <profile>
-      <id>local</id>
-      <activation>
-        <!-- Default profile when no -P flag is given -->
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <!-- No extra build config needed; Spring profile is selected at
-           runtime via -Dspring-boot.run.profiles=local              -->
-    </profile>
-
-    <profile>
-      <id>prod</id>
-      <!-- No extra build config needed; the fat-jar produced by
-           spring-boot:repackage is the same artifact for both profiles.
-           The active Spring profile is set inside the Dockerfile via
-           ENV SPRING_PROFILES_ACTIVE=prod                           -->
-    </profile>
-
-  </profiles>
 
 </project>

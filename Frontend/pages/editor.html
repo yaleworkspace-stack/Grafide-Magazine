@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Editor Dashboard — Grafide</title>
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/editor.css" />
+  <link rel="stylesheet" href="../css/submit.css" />
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <main id="main-content">
+    <div class="editor-page">
+      <h1>Editor Dashboard</h1>
+      <p class="editor-sub">Manage submissions, articles, magazine issues, and subscribers.</p>
+
+      <!-- Tab bar -->
+      <div class="editor-tabs" role="tablist">
+        <button class="editor-tab active" data-tab="review"      role="tab">Review Queue</button>
+        <button class="editor-tab"        data-tab="manage"      role="tab">Manage Articles</button>
+        <button class="editor-tab"        data-tab="upload"      role="tab">Upload Issue</button>
+        <button class="editor-tab"        data-tab="subscribers" role="tab">Subscribers</button>
+        <button class="editor-tab"        data-tab="messages"    role="tab">Messages</button>
+      </div>
+
+      <!-- ── REVIEW QUEUE ── -->
+      <div id="tab-review">
+        <div class="loading"    id="queue-loading">Loading&hellip;</div>
+        <div class="empty-state" id="queue-empty" style="display:none;">No submissions in the queue.</div>
+        <div class="queue-list" id="queue-list"   style="display:none;"></div>
+      </div>
+
+      <!-- ── MANAGE ARTICLES ── -->
+      <div id="tab-manage" style="display:none;">
+        <div class="loading"    id="manage-loading">Loading&hellip;</div>
+        <div class="empty-state" id="manage-empty" style="display:none;">No published articles yet.</div>
+        <div class="queue-list" id="manage-list"   style="display:none;"></div>
+
+        <!-- Inline edit panel -->
+        <div class="edit-panel" id="edit-panel" style="display:none;">
+          <h3>Edit Article</h3>
+          <div id="edit-error" class="error-text" style="display:none;"></div>
+          <div class="field"><label>Title</label><input type="text" id="edit-title" /></div>
+          <div class="field"><label>Subtitle / Deck</label><input type="text" id="edit-dek" /></div>
+          <div class="field">
+            <label>Category</label>
+            <select id="edit-category">
+              <option value="Fashion">Fashion</option>
+              <option value="Lifestyle">Lifestyle</option>
+              <option value="Photography">Photography</option>
+              <option value="Culture">Culture</option>
+            </select>
+          </div>
+          <div class="field"><label>Body</label><div id="edit-quill" class="quill-editor"></div></div>
+          <div style="display:flex;gap:12px;margin-top:16px;">
+            <button class="btn" id="edit-save-btn">Save Changes</button>
+            <button class="btn ghost" id="edit-cancel-btn">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── UPLOAD MAGAZINE ISSUE ── -->
+      <div id="tab-upload" style="display:none;">
+        <div id="upload-error" class="error-text" style="display:none;"></div>
+        <div class="field"><label>Title</label><input type="text" id="f-mag-title" placeholder="Issue 04 — Spring 2025" /></div>
+        <div class="field"><label>Short Description</label><input type="text" id="f-mag-dek" placeholder="One sentence about this issue" /></div>
+        <div class="field"><label>Cover Image</label><input type="file" id="f-mag-cover" accept="image/*" /></div>
+        <div class="field">
+          <label>Issue Write-up</label>
+          <div id="upload-quill" class="quill-editor"></div>
+        </div>
+        <button class="btn" id="upload-submit-btn">Publish Issue</button>
+      </div>
+
+      <!-- ── SUBSCRIBERS ── -->
+      <div id="tab-subscribers" style="display:none;">
+        <div class="loading"     id="sub-loading">Loading&hellip;</div>
+        <div class="empty-state"  id="sub-empty"  style="display:none;">No subscribers yet.</div>
+        <div id="sub-content"                     style="display:none;">
+          <p class="subscribers-count" id="sub-count"></p>
+          <table class="subscribers-table" id="sub-table">
+            <thead><tr><th>#</th><th>Email</th><th>Subscribed</th></tr></thead>
+            <tbody id="sub-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── MESSAGES ── -->
+      <div id="tab-messages" style="display:none;">
+        <div class="loading"     id="msg-loading">Loading&hellip;</div>
+        <div class="empty-state" id="msg-empty"   style="display:none;">No messages yet.</div>
+        <div class="queue-list"  id="msg-list"     style="display:none;"></div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Return note modal -->
+  <div class="modal-backdrop" id="return-modal">
+    <div class="modal">
+      <h3>Return Submission</h3>
+      <div class="field">
+        <label>Note to Author</label>
+        <textarea id="return-note" placeholder="Explain what needs to be revised…"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn ghost" id="return-cancel-btn">Cancel</button>
+        <button class="btn danger" id="return-confirm-btn">Return</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+  <script src="../js/shared.js"></script>
+  <script src="../js/editor.js"></script>
+</body>
+</html>

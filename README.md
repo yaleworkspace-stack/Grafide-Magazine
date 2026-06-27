@@ -1,70 +1,129 @@
-# Grafide — Developer Guide
+# Grafide Magazine — Developer Guide
 
-## Project structure
+## Project Structure
 
 ```
-project-root/
-├── Backend/
-│   ├── src/main/java/com/grafide/
-│   │   ├── GrafideApplication.java
-│   │   └── SpaFallbackController.java
-│   ├── src/main/resources/
-│   │   ├── application.properties          ← shared config (all profiles)
-│   │   ├── application-local.properties    ← local Windows dev
-│   │   └── application-prod.properties     ← Docker / Render cloud
-│   ├── pom.xml
-│   └── Dockerfile
-└── Frontend/
-    ├── index.html
-    ├── grafide.js
-    └── ...
+grafide-magazine/
+├── index.html                  # Homepage
+├── 404.html                    # 404 page
+├── css/
+│   ├── styles.css              # Shared base (tokens, header, footer, buttons)
+│   ├── home.css                # Homepage styles
+│   ├── article.css             # Article detail page
+│   ├── category.css            # Shared: Fashion, Lifestyle, Photography, Culture
+│   ├── magazine.css            # Magazines listing + detail
+│   ├── podcast.css             # Podcast page
+│   ├── auth.css                # Sign in, register, forgot, reset
+│   ├── submit.css              # Submit, my submissions, resubmit
+│   ├── editor.css              # Editor dashboard
+│   └── static.css              # About, Contact, Work With Us, Terms, Privacy, Cookies
+├── js/
+│   ├── shared.js               # API layer, header/footer, session, toast
+│   ├── app.js                  # Homepage
+│   ├── article.js              # Article detail
+│   ├── category-base.js        # Shared category logic
+│   ├── fashion.js              # Fashion page
+│   ├── lifestyle.js            # Lifestyle page
+│   ├── photography.js          # Photography page
+│   ├── culture.js              # Culture page
+│   ├── magazine.js             # Magazines page
+│   ├── podcast.js              # Podcast page
+│   ├── auth.js                 # Auth pages
+│   ├── submit.js               # Submit + my submissions + resubmit
+│   ├── editor.js               # Editor dashboard
+│   └── contact.js              # Contact form
+├── pages/
+│   ├── article.html
+│   ├── fashion.html
+│   ├── lifestyle.html
+│   ├── photography.html
+│   ├── culture.html
+│   ├── magazine.html
+│   ├── podcast.html
+│   ├── auth.html
+│   ├── submit.html
+│   ├── editor.html
+│   ├── about.html
+│   ├── contact.html
+│   ├── work-with-us.html
+│   ├── terms.html
+│   ├── privacy.html
+│   └── cookies.html
+└── backend/
+    ├── pom.xml
+    ├── Dockerfile
+    └── src/main/
+        ├── java/com/grafide/
+        │   ├── GrafideApplication.java
+        │   ├── config/
+        │   │   ├── SecurityConfig.java
+        │   │   ├── CloudinaryConfig.java
+        │   │   └── GlobalExceptionHandler.java
+        │   ├── controller/
+        │   │   ├── AuthController.java
+        │   │   ├── ArticleController.java
+        │   │   ├── SubmissionController.java
+        │   │   ├── MagazineController.java
+        │   │   ├── PodcastController.java
+        │   │   ├── SubscriberController.java
+        │   │   ├── ContactController.java
+        │   │   ├── UploadController.java
+        │   │   └── HealthController.java
+        │   ├── model/
+        │   │   ├── User.java
+        │   │   ├── Article.java
+        │   │   ├── Submission.java
+        │   │   ├── Magazine.java
+        │   │   ├── Podcast.java
+        │   │   ├── Subscriber.java
+        │   │   └── ContactMessage.java
+        │   ├── repository/
+        │   │   ├── UserRepository.java
+        │   │   ├── ArticleRepository.java
+        │   │   ├── SubmissionRepository.java
+        │   │   ├── MagazineRepository.java
+        │   │   ├── PodcastRepository.java
+        │   │   ├── SubscriberRepository.java
+        │   │   └── ContactRepository.java
+        │   └── security/
+        │       ├── JwtUtil.java
+        │       └── JwtAuthFilter.java
+        └── resources/
+            ├── application.properties          ← shared (all profiles)
+            ├── application-local.properties    ← Windows local dev
+            └── application-prod.properties     ← Render cloud
 ```
 
 ---
 
-## Local development (Windows — no Docker required)
+## Local Development (Windows — no Docker)
 
 ### Prerequisites
 
-| Tool | Version | Notes |
-|------|---------|-------|
-| JDK | 21+ | [Eclipse Temurin](https://adoptium.net/) recommended |
-| Maven | 3.9+ | Add `mvn` to `PATH`; verify with `mvn -v` |
-| MongoDB | 6+ | Install as a Windows service; starts automatically on boot |
+| Tool    | Version | Notes |
+|---------|---------|-------|
+| JDK     | 17      | [Eclipse Temurin](https://adoptium.net/) |
+| Maven   | 3.9+    | Add `mvn` to PATH |
+| MongoDB | 6+      | Install as Windows service |
 
-### Start MongoDB (if not running)
+### Start MongoDB
 
 ```bat
 net start MongoDB
 ```
 
-Verify it's up:
-
-```bat
-mongosh --eval "db.adminCommand('ping')"
-```
-
 ### Run the API
 
-From the `Backend/` directory:
+From the `backend/` directory:
 
 ```bat
-cd Backend
+cd backend
 mvn spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
-The API starts on **http://localhost:8080**.  
-The frontend at `../Frontend/` is served by Spring automatically.  
-Open **http://localhost:8080** in your browser — done.
+API starts at **http://localhost:8080**
 
-### What the local profile does
-
-- Connects to `mongodb://localhost:27017/grafide` (no Atlas, no Docker Compose).
-- Uses a safe hard-coded dev JWT secret (never deploy this value).
-- Stores uploaded images on local disk under `Backend/uploads/images/`.
-- Activates `SpaFallbackController` so browser refreshes on SPA routes work.
-- Serves the `../Frontend/` directory as static content via Spring.
-- No CORS issues — the API and frontend share the same origin.
+Open `index.html` via a static server or Live Server in VS Code.
 
 ### Stop MongoDB
 
@@ -74,18 +133,18 @@ net stop MongoDB
 
 ---
 
-## Environment variables (local overrides)
+## Environment Variables (local overrides only)
 
-You never need to set any environment variables for normal local development.  
-All local defaults live in `application-local.properties`.
+No environment variables are needed for normal local development —
+all local defaults live in `application-local.properties`.
 
-If you want to test Cloudinary uploads locally, set:
+To test Cloudinary locally:
 
 ```bat
 set CLOUDINARY_URL=cloudinary://key:secret@cloud-name
 ```
 
-If you want to test email locally, set:
+To test email locally:
 
 ```bat
 set MAIL_HOST=smtp.gmail.com
@@ -96,102 +155,142 @@ set MAIL_PASSWORD=your-app-password
 
 ---
 
-## Docker build (cloud deployment)
-
-Docker is used **only** for producing the cloud deployment artefact.  
-Never run Docker Compose for local development.
-
-### Build the image
-
-From the `Backend/` directory:
-
-```bash
-docker build -t grafide-api .
-```
-
-### Test the image locally (optional smoke-test)
-
-You must supply all required environment variables:
-
-```bash
-docker run -p 8080:8080 \
-  -e SPRING_DATA_MONGODB_URI="mongodb+srv://user:pass@cluster.mongodb.net/grafide" \
-  -e JWT_SECRET="your-long-random-secret" \
-  -e GRAFIDE_CORS_ORIGINS="http://localhost:8080" \
-  -e GRAFIDE_EDITOR_CODE="test-code" \
-  -e BASE_URL="http://localhost:8080" \
-  grafide-api
-```
-
----
-
-## Render deployment
+## Render Deployment
 
 ### Backend (Web Service)
 
-| Setting | Value |
-|---------|-------|
-| Environment | Docker |
-| Dockerfile path | `Backend/Dockerfile` |
-| Instance type | Starter or above |
+| Setting            | Value               |
+|--------------------|---------------------|
+| Environment        | Docker              |
+| Dockerfile path    | `backend/Dockerfile`|
+| Instance type      | Starter or above    |
 
-**Environment variables to set in Render dashboard:**
+**Environment variables to set in Render:**
 
-| Variable | Description |
-|----------|-------------|
+| Variable                  | Description |
+|---------------------------|-------------|
 | `SPRING_DATA_MONGODB_URI` | MongoDB Atlas connection string |
-| `JWT_SECRET` | Long random string (32+ chars). App refuses to start without it. |
-| `CLOUDINARY_URL` | Cloudinary URL. Without it, uploads use ephemeral container disk. |
-| `GRAFIDE_CORS_ORIGINS` | Your frontend URL e.g. `https://grafide-frontend.onrender.com` |
-| `GRAFIDE_EDITOR_CODE` | Secret code for editor registration |
-| `BASE_URL` | Your backend URL e.g. `https://grafide-api.onrender.com` |
-| `MAIL_HOST` | SMTP host (optional — reset links fall back to logs if absent) |
-| `MAIL_PORT` | SMTP port (optional) |
-| `MAIL_USERNAME` | SMTP username (optional) |
-| `MAIL_PASSWORD` | SMTP password (optional) |
-| `MAIL_FROM` | From address for reset emails (optional) |
+| `JWT_SECRET`              | 32+ character random string — app refuses to start without it |
+| `CLOUDINARY_URL`          | Cloudinary URL for image uploads |
+| `GRAFIDE_CORS_ORIGINS`    | Frontend URL e.g. `https://grafide-frontend.onrender.com` |
+| `GRAFIDE_EDITOR_CODE`     | Secret code for editor account registration |
+| `BASE_URL`                | Backend URL e.g. `https://grafide-api.onrender.com` |
+| `MAIL_ENABLED`            | `true` to enable email; omit to log reset links to console |
+| `MAIL_HOST`               | SMTP host (optional) |
+| `MAIL_PORT`               | SMTP port (optional) |
+| `MAIL_USERNAME`           | SMTP username (optional) |
+| `MAIL_PASSWORD`           | SMTP password (optional) |
+| `MAIL_FROM`               | From address for reset emails (optional) |
 
 ### Frontend (Static Site)
 
-| Setting | Value |
-|---------|-------|
-| Root directory | `Frontend/` |
-| Build command | *(leave blank — no build step)* |
-| Publish directory | `Frontend/` |
+| Setting           | Value        |
+|-------------------|--------------|
+| Root directory    | `/`          |
+| Build command     | *(blank)*    |
+| Publish directory | `/`          |
 
-**Redirect rule** — add this in the Render Static Site dashboard  
-*(replaces the deleted `SpaFallbackController` which is inactive in prod)*:
+**Redirect rule** (add in Render Static Site dashboard):
 
-| Source | Destination | Type |
-|--------|-------------|------|
-| `/*` | `/index.html` | Rewrite |
+| Source | Destination  | Type    |
+|--------|--------------|---------|
+| `/*`   | `/index.html`| Rewrite |
 
 ---
 
-## Key design decisions
+## API Endpoints
 
-### Why two Spring profiles instead of one `application.properties`?
+### Auth
+| Method | Endpoint                    | Auth   |
+|--------|-----------------------------|--------|
+| POST   | `/api/auth/register`        | Public |
+| POST   | `/api/auth/login`           | Public |
+| POST   | `/api/auth/forgot-password` | Public |
+| POST   | `/api/auth/reset-password`  | Public |
 
-A single file with `${VAR:fallback}` syntax creates two risks:
+### Articles
+| Method | Endpoint                       | Auth   |
+|--------|--------------------------------|--------|
+| GET    | `/api/articles`                | Public |
+| GET    | `/api/articles/{id}`           | Public |
+| GET    | `/api/articles/search?q=`      | Public |
+| PUT    | `/api/articles/{id}`           | Editor |
+| PUT    | `/api/articles/{id}/pin`       | Editor |
+| PUT    | `/api/articles/{id}/unpin`     | Editor |
+| PUT    | `/api/articles/{id}/unpublish` | Editor |
+| PUT    | `/api/articles/{id}/republish` | Editor |
+| DELETE | `/api/articles/{id}`           | Editor |
 
-1. **Accidental prod-like runs locally** — if a developer has `JWT_SECRET` set in their shell from a previous task, the local app silently picks it up.
-2. **Weak secrets deployed to prod** — if `JWT_SECRET` is not set on Render, the app would boot with the fallback string, allowing anyone to forge admin tokens.
+### Submissions
+| Method | Endpoint                          | Auth      |
+|--------|-----------------------------------|-----------|
+| POST   | `/api/submissions`                | Any user  |
+| GET    | `/api/submissions/mine`           | Any user  |
+| GET    | `/api/submissions/queue`          | Editor    |
+| GET    | `/api/submissions/{id}`           | Author/Editor |
+| PUT    | `/api/submissions/{id}/approve`   | Editor    |
+| PUT    | `/api/submissions/{id}/return`    | Editor    |
+| PUT    | `/api/submissions/{id}/resubmit`  | Author    |
+| DELETE | `/api/submissions/{id}/withdraw`  | Author    |
 
-Separate profile files make each environment self-describing and eliminate both risks.
+### Magazines
+| Method | Endpoint            | Auth   |
+|--------|---------------------|--------|
+| GET    | `/api/magazines`    | Public |
+| GET    | `/api/magazines/{id}` | Public |
+| POST   | `/api/magazines`    | Editor |
+| DELETE | `/api/magazines/{id}` | Editor |
 
-### Why no Docker Compose?
+### Podcasts
+| Method | Endpoint            | Auth   |
+|--------|---------------------|--------|
+| GET    | `/api/podcasts`     | Public |
+| GET    | `/api/podcasts/{id}` | Public |
+| POST   | `/api/podcasts`     | Editor |
+| DELETE | `/api/podcasts/{id}` | Editor |
 
-Docker Compose is a multi-container orchestration tool. Using it locally would mean:
+### Contact
+| Method | Endpoint              | Auth   |
+|--------|-----------------------|--------|
+| POST   | `/api/contact`        | Public |
+| GET    | `/api/contact`        | Editor |
+| PUT    | `/api/contact/{id}/read` | Editor |
 
-- Running MongoDB inside a Docker container instead of the native Windows service.
-- Every developer needing Docker Desktop installed (heavyweight, licensed for teams).
-- Slower iteration — containers must rebuild on source changes.
+### Misc
+| Method | Endpoint              | Auth   |
+|--------|-----------------------|--------|
+| POST   | `/api/subscribers`    | Public |
+| GET    | `/api/subscribers`    | Editor |
+| POST   | `/api/upload/image`   | Editor |
+| GET    | `/api/health`         | Public |
 
-The native Windows MongoDB service starts faster, persists data between sessions without volume mounts, and needs no Docker knowledge to operate.
+---
 
-### Why `@Profile("local")` on `SpaFallbackController` and `staticFrontendConfigurer`?
+## Key Design Decisions
 
-In the prod Docker image, Spring must not intercept `/article/**` or serve `../Frontend/` — the frontend is a completely separate Render Static Site. If these beans activated in prod, every SPA-route request would 404 inside the container (the `Frontend/` directory doesn't exist in the image) and potentially mask API errors.
-git add .
-git commit -m "Fix article edit persistence, Quill inline images, portrait rotation, add Podcast and Magazines pages"
-git push
+### Two Spring profiles — not one `application.properties`
+
+Keeps local dev and production self-describing. A developer never accidentally
+runs with production secrets, and weak secrets can never reach Render.
+
+### No Docker for local development
+
+Docker is used only to produce the Render deployment artefact. Locally,
+the native Windows MongoDB service starts faster, persists data without
+volume mounts, and requires no Docker knowledge.
+
+### JWT secret SHA-256 hashing
+
+Raw secrets of any length are hashed to 256 bits before signing, preventing
+`SignatureException` / HTTP 500 errors from short secrets.
+
+### Page-scoped JS/CSS
+
+Every page has its own HTML, CSS, and JS file. No single monolithic JS file.
+`shared.js` provides the API layer, header/footer, session helpers, and toast —
+everything else is page-specific.
+
+### Editor access via role — no hidden URL
+
+Editor registration requires the `GRAFIDE_EDITOR_CODE` secret.
+Admin features are unlocked inside the normal app for accounts with `role=editor`.

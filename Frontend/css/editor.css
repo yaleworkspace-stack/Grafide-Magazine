@@ -1,0 +1,157 @@
+/* ============================================================
+   GRAFIDE — editor.css
+   Editor dashboard: review queue, manage articles, subscribers
+   ============================================================ */
+
+/* ── Editor layout ──────────────────────────────────────────── */
+.editor-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 48px 24px 88px;
+}
+.editor-page h1 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 2.4rem;
+  color: var(--navy);
+  margin-bottom: 8px;
+  font-weight: 400;
+}
+.editor-sub {
+  color: var(--muted);
+  font-weight: 300;
+  margin-bottom: 40px;
+}
+
+/* ── Tab bar ────────────────────────────────────────────────── */
+.editor-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 36px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.editor-tab {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 12px 20px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: color var(--transition), border-color var(--transition);
+}
+.editor-tab:hover  { color: var(--navy); }
+.editor-tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+
+/* ── Queue / manage row ─────────────────────────────────────── */
+.queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.queue-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: start;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+.queue-row:last-child { border-bottom: none; }
+
+.queue-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.1rem;
+  color: var(--navy);
+  margin-bottom: 4px;
+  font-weight: 400;
+}
+.queue-meta   { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
+.queue-note   { font-size: 0.82rem; color: var(--muted); border-left: 3px solid var(--cobalt); padding-left: 12px; margin-top: 6px; font-style: italic; }
+.queue-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
+
+/* ── Return note modal ──────────────────────────────────────── */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(18,21,46,0.5);
+  z-index: 4000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: var(--paper);
+  border-radius: var(--radius-md);
+  padding: 32px;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+}
+.modal h3 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.5rem;
+  color: var(--navy);
+  margin-bottom: 16px;
+  font-weight: 400;
+}
+.modal .field { margin-bottom: 20px; }
+.modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+
+/* ── Edit article panel ─────────────────────────────────────── */
+.edit-panel {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 28px;
+  margin-top: 16px;
+}
+.edit-panel h3 {
+  font-family: 'Times New Roman', Times, serif;
+  font-weight: 400;
+  color: var(--navy);
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+}
+
+/* ── Subscribers table ──────────────────────────────────────── */
+.subscribers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.subscribers-table th {
+  text-align: left;
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--navy);
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--line);
+}
+.subscribers-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-weight: 300;
+}
+.subscribers-table tr:last-child td { border-bottom: none; }
+.subscribers-count {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .queue-row { grid-template-columns: 1fr; }
+  .queue-actions { justify-content: flex-start; }
+}

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In — Grafide</title>
+  <meta name="description" content="Sign in to your Grafide account." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <main id="main-content">
+    <div class="auth-page">
+      <div class="auth-card">
+
+        <div class="auth-logo">
+          <a href="/index.html"><img src="/images/logo.png" alt="Grafide" /></a>
+        </div>
+
+        <!-- ── SIGN IN ── -->
+        <div id="view-signin">
+          <h1>Welcome Back</h1>
+          <p class="auth-sub">Sign in to your Grafide account.</p>
+          <div id="signin-error"   class="auth-error"></div>
+          <div class="auth-form">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="signin-username" autocomplete="username" placeholder="your_username" />
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="signin-password" autocomplete="current-password" placeholder="••••••••" />
+            </div>
+            <button class="btn auth-submit" id="signin-btn">Sign In</button>
+          </div>
+          <div class="auth-footer">
+            <a href="/pages/auth.html?view=forgot">Forgot password?</a><br />
+            Don't have an account? <a href="/pages/auth.html?view=register">Register</a>
+          </div>
+        </div>
+
+        <!-- ── REGISTER ── -->
+        <div id="view-register" style="display:none;">
+          <h1>Create Account</h1>
+          <p class="auth-sub">Join Grafide and start submitting your work.</p>
+          <div id="register-error"   class="auth-error"></div>
+          <div id="register-success" class="auth-success"></div>
+          <div class="auth-form">
+            <div class="field">
+              <label>Display Name</label>
+              <input type="text" id="reg-displayname" autocomplete="name" placeholder="Your Name" />
+            </div>
+            <div class="field">
+              <label>Email</label>
+              <input type="email" id="reg-email" autocomplete="email" placeholder="you@email.com" />
+            </div>
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="reg-username" autocomplete="username" placeholder="your_username" />
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input type="password" id="reg-password" autocomplete="new-password" placeholder="••••••••" />
+            </div>
+            <div class="field editor-code-field">
+              <label>Editor Code <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label>
+              <input type="text" id="reg-editorcode" placeholder="Leave blank if registering as a contributor" />
+              <p class="editor-code-hint">Only enter this if you have been given an editor access code.</p>
+            </div>
+            <button class="btn auth-submit" id="register-btn">Create Account</button>
+          </div>
+          <div class="auth-footer">
+            Already have an account? <a href="/pages/auth.html">Sign In</a>
+          </div>
+        </div>
+
+        <!-- ── FORGOT PASSWORD ── -->
+        <div id="view-forgot" style="display:none;">
+          <h1>Forgot Password</h1>
+          <p class="auth-sub">Enter your username and we'll send a reset link.</p>
+          <div id="forgot-error"   class="auth-error"></div>
+          <div id="forgot-success" class="auth-success"></div>
+          <div class="auth-form">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="forgot-username" autocomplete="username" placeholder="your_username" />
+            </div>
+            <button class="btn auth-submit" id="forgot-btn">Send Reset Link</button>
+          </div>
+          <div class="auth-footer">
+            <a href="/pages/auth.html">Back to Sign In</a>
+          </div>
+        </div>
+
+        <!-- ── RESET PASSWORD ── -->
+        <div id="view-reset" style="display:none;">
+          <h1>Reset Password</h1>
+          <p class="auth-sub">Enter your new password below.</p>
+          <div id="reset-error"   class="auth-error"></div>
+          <div id="reset-success" class="auth-success"></div>
+          <div class="auth-form">
+            <div class="field">
+              <label>New Password</label>
+              <input type="password" id="reset-password" autocomplete="new-password" placeholder="••••••••" />
+            </div>
+            <button class="btn auth-submit" id="reset-btn">Set New Password</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="../js/shared.js"></script>
+  <script src="../js/auth.js"></script>
+</body>
+</html>

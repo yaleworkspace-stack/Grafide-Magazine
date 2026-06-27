@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Photography — Grafide</title>
+  <meta name="description" content="A frame at a time — stories told through the lens of the world's most compelling photographers." />
+
+  <meta property="og:type"        content="website" />
+  <meta property="og:site_name"   content="Grafide" />
+  <meta property="og:title"       content="Photography — Grafide" />
+  <meta property="og:description" content="A frame at a time — stories told through the lens of the world's most compelling photographers." />
+  <meta property="og:image"       content="/images/logo.png" />
+
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:site"        content="@grafidemagazine" />
+  <meta name="twitter:title"       content="Photography — Grafide" />
+  <meta name="twitter:description" content="A frame at a time — stories told through the lens of the world's most compelling photographers." />
+  <meta name="twitter:image"       content="/images/logo.png" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/category.css" />
+</head>
+<body>
+
+  <header class="site-header" id="site-header"></header>
+
+  <main id="main-content">
+
+    <!-- Banner -->
+    <div class="category-banner-plain category-banner">
+      <div class="category-eyebrow">
+        <span class="diamond"></span> Grafide
+      </div>
+      <h1 class="category-banner-title" id="banner-title">Photography</h1>
+      <p class="category-banner-dek"   id="banner-dek">A frame at a time — stories told through the lens of the world's most compelling photographers.</p>
+    </div>
+
+    <!-- Articles -->
+    <section class="section">
+      <div class="loading"     id="cat-loading">Loading&hellip;</div>
+      <div class="empty-state" id="cat-empty"   style="display:none;">
+        No Photography articles yet. Check back soon.
+      </div>
+      <div class="category-grid" id="cat-grid"></div>
+      <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
+        <button class="btn ghost" id="load-more-btn">Load More</button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" id="site-footer"></footer>
+
+  <script src="../js/shared.js"></script>
+  <script src="../js/category-base.js"></script>
+  <script src="../js/photography.js"></script>
+</body>
+</html>
