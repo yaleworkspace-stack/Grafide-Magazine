@@ -155,6 +155,7 @@ function renderHeader(activePage = '') {
     { label: 'Culture',      href: '/pages/culture.html',      key: 'culture' },
     { label: 'Magazines',    href: '/pages/magazine.html',     key: 'magazine' },
     { label: 'Podcast',      href: '/pages/podcast.html',      key: 'podcast' },
+    { label: 'Shop',         href: '/pages/shop.html',         key: 'shop' },
   ];
 
   const authLinks = session ? [
@@ -289,6 +290,7 @@ function renderFooter(subMsg = '', subErr = false) {
         <a href="/pages/culture.html">Culture</a>
         <a href="/pages/magazine.html">Magazines</a>
         <a href="/pages/podcast.html">Podcast</a>
+        <a href="/pages/shop.html">Shop</a>
       </div>
 
       <div class="footer-col">
@@ -296,6 +298,8 @@ function renderFooter(subMsg = '', subErr = false) {
         <a href="/pages/about.html">About</a>
         <a href="/pages/contact.html">Contact</a>
         <a href="/pages/work-with-us.html">Work With Us</a>
+        <a href="/pages/brand-apply.html">Partner With Us</a>
+        <a href="/pages/orders.html">My Orders</a>
       </div>
 
       <div class="footer-col">

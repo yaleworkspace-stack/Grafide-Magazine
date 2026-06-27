@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product — Grafide</title>
+  <meta name="description" content="Grafide Shop product detail." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/shop.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+  <main id="main-content">
+    <div class="loading" id="product-loading">Loading&hellip;</div>
+
+    <div class="product-detail-page" id="product-detail" style="display:none;">
+      <!-- Gallery -->
+      <div class="product-detail-gallery">
+        <div class="product-detail-main-img">
+          <img id="detail-main-img" src="" alt="" />
+        </div>
+        <div class="product-detail-thumbs" id="detail-thumbs"></div>
+      </div>
+
+      <!-- Info -->
+      <div class="product-detail-info">
+        <a class="back-link" href="/pages/shop.html">&#8592; Back to Shop</a>
+        <p class="product-detail-brand" id="detail-brand"></p>
+        <h1 class="product-detail-title" id="detail-title"></h1>
+        <p class="product-detail-price"  id="detail-price"></p>
+        <p class="product-detail-shipping">+ ₦2,500 flat-rate shipping</p>
+
+        <div id="out-of-stock-msg" class="error-text" style="display:none;margin-bottom:20px;">This product is currently out of stock.</div>
+
+        <p class="product-detail-desc" id="detail-desc"></p>
+
+        <div class="qty-row" id="qty-row">
+          <span class="qty-label">Qty</span>
+          <div class="qty-controls">
+            <button class="qty-btn" id="qty-down">&#8722;</button>
+            <input  class="qty-val" id="qty-val" type="number" value="1" min="1" />
+            <button class="qty-btn" id="qty-up">&#43;</button>
+          </div>
+        </div>
+
+        <button class="btn add-to-cart-btn" id="add-to-cart-btn">Add to Cart</button>
+        <div id="add-cart-msg" style="margin-top:12px;font-size:.88rem;color:var(--muted);display:none;"></div>
+      </div>
+    </div>
+
+    <div class="empty-state" id="product-error" style="display:none;">
+      Product not found. <a href="/pages/shop.html" class="back-link" style="margin:0">Back to Shop</a>
+    </div>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script src="../js/shared.js"></script>
+  <script src="../js/product.js"></script>
+</body>
+</html>

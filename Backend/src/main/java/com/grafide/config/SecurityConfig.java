@@ -73,6 +73,31 @@ public class SecurityConfig {
                 // All other upload routes remain editor-only
                 .requestMatchers(HttpMethod.POST,   "/api/upload/**").hasRole("EDITOR")
 
+                // ── Shop — public ────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,  "/api/shop/products/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/brands/apply").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/paystack/webhook").permitAll()
+                .requestMatchers(HttpMethod.GET,  "/api/paystack/callback").permitAll()
+
+                // ── Shop — authenticated customers ────────────────────
+                .requestMatchers(HttpMethod.POST, "/api/orders").authenticated()
+                .requestMatchers(HttpMethod.GET,  "/api/orders/mine").authenticated()
+                .requestMatchers(HttpMethod.GET,  "/api/orders/*").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/paystack/initiate").authenticated()
+
+                // ── Shop — editor only ────────────────────────────────
+                .requestMatchers(HttpMethod.POST,   "/api/shop/products").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.PUT,    "/api/shop/products/**").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.DELETE, "/api/shop/products/**").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.GET,    "/api/orders").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.PUT,    "/api/orders/*/status").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.GET,    "/api/brands").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.GET,    "/api/brands/*").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.PUT,    "/api/brands/*/approve").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.PUT,    "/api/brands/*/reject").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.PUT,    "/api/brands/*/commission").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.DELETE, "/api/brands/**").hasRole("EDITOR")
+
                 // ── Catch-all ────────────────────────────────────────
                 .anyRequest().authenticated()
             )

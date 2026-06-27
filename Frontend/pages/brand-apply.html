@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partner With Us — Grafide Shop</title>
+  <meta name="description" content="Apply to sell on the Grafide Shop." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/shop.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+  <main id="main-content">
+    <div class="static-page" style="max-width:680px;margin:0 auto;padding:64px 24px 96px;">
+      <p class="static-eyebrow" style="font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;color:var(--cobalt);margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+        <span class="diamond"></span> Brand Partnership
+      </p>
+      <h1 style="font-family:'Times New Roman',serif;font-size:clamp(2rem,5vmin,3rem);color:var(--navy);font-weight:400;margin-bottom:10px;">Sell on Grafide Shop</h1>
+      <p style="font-size:1.05rem;font-weight:300;color:var(--muted);line-height:1.7;margin-bottom:40px;padding-bottom:28px;border-bottom:1px solid var(--line);">
+        Reach a curated audience of fashion-conscious readers. We work with brands whose values align with ours — creativity, craft, and authenticity. Fill in the form below and our team will be in touch.
+      </p>
+
+      <div id="apply-error"   class="error-text" style="display:none;"></div>
+      <div id="apply-success" class="success-box" style="display:none;">
+        Application received! We'll review it and get back to you within 3–5 business days.
+      </div>
+
+      <div class="field"><label>Brand Name</label><input type="text" id="f-brand-name" placeholder="Your brand name" /></div>
+      <div class="field"><label>Contact Person</label><input type="text" id="f-contact-name" placeholder="Your full name" /></div>
+      <div class="field"><label>Email Address</label><input type="email" id="f-brand-email" placeholder="brand@email.com" /></div>
+      <div class="field"><label>Website <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label><input type="url" id="f-website" placeholder="https://yourbrand.com" /></div>
+      <div class="field"><label>Instagram <span style="font-weight:300;text-transform:none;letter-spacing:0">(optional)</span></label><input type="text" id="f-instagram" placeholder="@yourbrand" /></div>
+      <div class="field"><label>Tell Us About Your Brand</label><textarea id="f-description" placeholder="What do you sell? Who is your customer? What makes your brand special?"></textarea></div>
+
+      <button class="btn" id="apply-submit-btn">Submit Application</button>
+    </div>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script src="../js/shared.js"></script>
+  <script src="../js/brand-apply.js"></script>
+</body>
+</html>

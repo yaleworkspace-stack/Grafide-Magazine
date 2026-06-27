@@ -35,6 +35,9 @@
         <button class="editor-tab"        data-tab="upload"      role="tab">Upload Issue</button>
         <button class="editor-tab"        data-tab="subscribers" role="tab">Subscribers</button>
         <button class="editor-tab"        data-tab="messages"    role="tab">Messages</button>
+        <button class="editor-tab"        data-tab="orders"      role="tab">Orders</button>
+        <button class="editor-tab"        data-tab="products"    role="tab">Products</button>
+        <button class="editor-tab"        data-tab="brands"      role="tab">Brands</button>
       </div>
 
       <!-- ── REVIEW QUEUE ── -->
@@ -104,6 +107,83 @@
         <div class="loading"     id="msg-loading">Loading&hellip;</div>
         <div class="empty-state" id="msg-empty"   style="display:none;">No messages yet.</div>
         <div class="queue-list"  id="msg-list"     style="display:none;"></div>
+      </div>
+
+
+      <!-- ── ORDERS ── -->
+      <div id="tab-orders" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn ghost sm order-filter-btn active" data-status="">All</button>
+            <button class="btn ghost sm order-filter-btn" data-status="PENDING">Pending</button>
+            <button class="btn ghost sm order-filter-btn" data-status="PAID">Paid</button>
+            <button class="btn ghost sm order-filter-btn" data-status="PROCESSING">Processing</button>
+            <button class="btn ghost sm order-filter-btn" data-status="SHIPPED">Shipped</button>
+            <button class="btn ghost sm order-filter-btn" data-status="DELIVERED">Delivered</button>
+          </div>
+        </div>
+        <div class="loading"    id="orders-loading">Loading&hellip;</div>
+        <div class="empty-state" id="orders-empty" style="display:none;">No orders yet.</div>
+        <div class="queue-list" id="orders-list"   style="display:none;"></div>
+      </div>
+
+      <!-- ── PRODUCTS ── -->
+      <div id="tab-products" style="display:none;">
+        <div style="margin-bottom:24px;">
+          <button class="btn sm" id="add-product-btn">+ Add Product</button>
+        </div>
+
+        <!-- Add / Edit product form -->
+        <div class="edit-panel" id="product-form-panel" style="display:none;">
+          <h3 id="product-form-title">Add Product</h3>
+          <div id="product-form-error" class="error-text" style="display:none;"></div>
+          <div class="field"><label>Title</label><input type="text" id="pf-title" /></div>
+          <div class="field"><label>Description</label><textarea id="pf-description" style="min-height:100px;"></textarea></div>
+          <div class="field">
+            <label>Category</label>
+            <select id="pf-category">
+              <option value="">Select category</option>
+              <option value="Magazine Issues">Magazine Issues</option>
+              <option value="Apparel">Apparel</option>
+              <option value="Accessories">Accessories</option>
+              <option value="Beauty">Beauty</option>
+            </select>
+          </div>
+          <div class="field"><label>Price (₦)</label><input type="number" id="pf-price" min="0" step="0.01" /></div>
+          <div class="field"><label>Stock</label><input type="number" id="pf-stock" min="0" /></div>
+          <div class="field">
+            <label>Brand <span class="field-hint">(leave blank for Grafide own product)</span></label>
+            <select id="pf-brand">
+              <option value="">Grafide (own product)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Product Images</label>
+            <input type="file" id="pf-images" accept="image/*" multiple />
+            <div class="cover-previews" id="pf-image-previews"></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:16px;">
+            <button class="btn" id="pf-save-btn">Save Product</button>
+            <button class="btn ghost" id="pf-cancel-btn">Cancel</button>
+          </div>
+        </div>
+
+        <div class="loading"    id="products-loading">Loading&hellip;</div>
+        <div class="empty-state" id="products-empty" style="display:none;">No products yet.</div>
+        <div class="queue-list" id="products-list"   style="display:none;"></div>
+      </div>
+
+      <!-- ── BRANDS ── -->
+      <div id="tab-brands" style="display:none;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+          <button class="btn ghost sm brand-filter-btn active" data-status="">All</button>
+          <button class="btn ghost sm brand-filter-btn" data-status="pending">Pending</button>
+          <button class="btn ghost sm brand-filter-btn" data-status="approved">Approved</button>
+          <button class="btn ghost sm brand-filter-btn" data-status="rejected">Rejected</button>
+        </div>
+        <div class="loading"    id="brands-loading">Loading&hellip;</div>
+        <div class="empty-state" id="brands-empty" style="display:none;">No brand applications yet.</div>
+        <div class="queue-list" id="brands-list"   style="display:none;"></div>
       </div>
 
     </div>

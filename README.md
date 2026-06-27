@@ -294,3 +294,93 @@ everything else is page-specific.
 
 Editor registration requires the `GRAFIDE_EDITOR_CODE` secret.
 Admin features are unlocked inside the normal app for accounts with `role=editor`.
+
+---
+
+## Shop API Endpoints
+
+### Products
+| Method | Endpoint                         | Auth   |
+|--------|----------------------------------|--------|
+| GET    | `/api/shop/products`             | Public |
+| GET    | `/api/shop/products/{id}`        | Public |
+| GET    | `/api/shop/products/search?q=`   | Public |
+| POST   | `/api/shop/products`             | Editor |
+| PUT    | `/api/shop/products/{id}`        | Editor |
+| DELETE | `/api/shop/products/{id}`        | Editor |
+
+### Orders
+| Method | Endpoint                         | Auth     |
+|--------|----------------------------------|----------|
+| POST   | `/api/orders`                    | Any user |
+| GET    | `/api/orders/mine`               | Any user |
+| GET    | `/api/orders/{id}`               | Any user |
+| GET    | `/api/orders`                    | Editor   |
+| PUT    | `/api/orders/{id}/status`        | Editor   |
+
+### Brands
+| Method | Endpoint                         | Auth   |
+|--------|----------------------------------|--------|
+| POST   | `/api/brands/apply`              | Public |
+| GET    | `/api/brands`                    | Editor |
+| GET    | `/api/brands/{id}`               | Editor |
+| PUT    | `/api/brands/{id}/approve`       | Editor |
+| PUT    | `/api/brands/{id}/reject`        | Editor |
+| PUT    | `/api/brands/{id}/commission`    | Editor |
+| DELETE | `/api/brands/{id}`               | Editor |
+
+### Paystack
+| Method | Endpoint                         | Auth     |
+|--------|----------------------------------|----------|
+| POST   | `/api/paystack/initiate`         | Any user |
+| POST   | `/api/paystack/webhook`          | Public   |
+| GET    | `/api/paystack/callback`         | Public   |
+
+---
+
+## Render Environment Variables (Shop additions)
+
+| Variable              | Description                              |
+|-----------------------|------------------------------------------|
+| `PAYSTACK_SECRET_KEY` | Paystack secret key (live: `sk_live_…`)  |
+| `PAYSTACK_PUBLIC_KEY` | Paystack public key (live: `pk_live_…`)  |
+| `SHOP_SHIPPING_FEE`   | Flat shipping fee in Naira (default 2500)|
+
+## Local Testing with Paystack
+
+Use Paystack **test keys** locally:
+- `sk_test_…` in `application-local.properties`
+- Use test card: `4084 0840 8408 4081`, Expiry any future date, CVV `408`
+- Test webhook with [Paystack CLI](https://paystack.com/docs/payments/webhooks) or ngrok
+
+## Shop Flow Summary
+
+```
+Customer adds to cart (localStorage)
+        ↓
+Clicks Checkout → must be signed in
+        ↓
+POST /api/orders   → order created (PENDING), stock reserved
+        ↓
+POST /api/paystack/initiate → gets Paystack auth URL
+        ↓
+Redirect to Paystack payment page
+        ↓
+Paystack webhook → POST /api/paystack/webhook
+        ↓ (async, server-side)
+Order status → PAID
+        ↓
+Browser callback → GET /api/paystack/callback
+        ↓
+Redirect → /pages/orders.html?payment=success
+```
+
+## Commission Calculation
+
+Per order item:
+- `commissionAmount = price × qty × (commissionRate / 100)`
+- `brandPayout = (price × qty) - commissionAmount`
+- Grafide keeps the commission; brand receives the payout
+
+Rates are locked at order time — changing a brand's rate later
+doesn't affect existing orders.

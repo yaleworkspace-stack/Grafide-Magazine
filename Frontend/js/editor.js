@@ -13,7 +13,7 @@ function guardEditor() {
 }
 
 // ── Tab switching ────────────────────────────────────────────────
-const TABS = ['review', 'manage', 'upload', 'subscribers', 'messages'];
+const TABS = ['review', 'manage', 'upload', 'subscribers', 'messages', 'orders', 'products', 'brands'];
 function switchTab(name) {
   TABS.forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === name ? '' : 'none';
@@ -25,6 +25,9 @@ function switchTab(name) {
   if (name === 'upload'      && !_uploadInited)    initUpload();
   if (name === 'subscribers' && !_subsLoaded)      loadSubscribers();
   if (name === 'messages'     && !_msgsLoaded)      loadMessages();
+  if (name === 'orders'       && !_ordersLoaded)    loadOrders();
+  if (name === 'products'     && !_productsLoaded)  loadProducts();
+  if (name === 'brands'       && !_brandsLoaded)    loadBrands();
 }
 
 // ── ─── REVIEW QUEUE ────────────────────────────────────────────
@@ -306,6 +309,9 @@ function init() {
 
   initReturnModal();
   initEditPanel();
+  initOrderFilters();
+  initProductForm();
+  initBrandFilters();
   switchTab(startTab);
 }
 

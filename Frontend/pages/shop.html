@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shop — Grafide</title>
+  <meta name="description" content="Shop fashion, accessories, and Grafide magazine issues." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/shop.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+  <main id="main-content">
+    <!-- Banner -->
+    <div class="shop-banner">
+      <p class="shop-banner-eyebrow"><span class="diamond"></span> Grafide Shop</p>
+      <h1 class="shop-banner-title">Fashion. Style. Culture.</h1>
+      <p class="shop-banner-dek">Physical magazine issues, curated fashion finds, and the best of our brand partners.</p>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="shop-filter-bar">
+      <span class="shop-filter-label">Browse</span>
+      <button class="shop-filter-btn active" data-category="">All</button>
+      <button class="shop-filter-btn" data-category="Magazine Issues">Magazine Issues</button>
+      <button class="shop-filter-btn" data-category="Apparel">Apparel</button>
+      <button class="shop-filter-btn" data-category="Accessories">Accessories</button>
+      <button class="shop-filter-btn" data-category="Beauty">Beauty</button>
+      <a href="/pages/cart.html" class="shop-cart-link">
+        Cart <span class="cart-count-badge" id="cart-count">0</span>
+      </a>
+    </div>
+
+    <!-- Products -->
+    <section class="section">
+      <div class="loading"      id="shop-loading">Loading&hellip;</div>
+      <div class="empty-state"  id="shop-empty"   style="display:none;">No products yet — check back soon.</div>
+      <div class="product-grid" id="product-grid"  style="display:none;"></div>
+      <div class="load-more-wrap" id="load-more-wrap" style="display:none;">
+        <button class="btn ghost" id="load-more-btn">Load More</button>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script src="../js/shared.js"></script>
+  <script src="../js/shop.js"></script>
+</body>
+</html>

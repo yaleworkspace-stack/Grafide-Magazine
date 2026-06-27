@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cart — Grafide</title>
+  <meta name="description" content="Your Grafide shopping cart." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
+  <link rel="shortcut icon" href="../favicon.ico" />
+  <meta name="theme-color" content="#FBF9F4" />
+  <link rel="stylesheet" href="../css/styles.css" />
+  <link rel="stylesheet" href="../css/shop.css" />
+</head>
+<body>
+  <header class="site-header" id="site-header"></header>
+  <main id="main-content">
+    <div class="cart-page">
+      <h1>Your Cart</h1>
+
+      <!-- Payment result banners -->
+      <div id="payment-success-banner" class="payment-success-banner" style="display:none;">
+        &#10003; Payment successful! Your order has been placed.
+      </div>
+      <div id="payment-failed-banner" class="error-text" style="display:none;margin-bottom:24px;">
+        Payment was not completed. Please try again.
+      </div>
+
+      <!-- Empty cart -->
+      <div class="empty-state" id="cart-empty" style="display:none;">
+        <p>Your cart is empty.</p>
+        <a href="/pages/shop.html" class="btn ghost sm" style="margin-top:16px;">Browse Shop</a>
+      </div>
+
+      <!-- Cart items -->
+      <div id="cart-content" style="display:none;">
+        <div class="cart-items" id="cart-items"></div>
+
+        <!-- Shipping form -->
+        <div class="shipping-form">
+          <h2>Shipping Details</h2>
+          <div id="checkout-error" class="error-text" style="display:none;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="field"><label>Full Name</label><input type="text" id="s-name" placeholder="Recipient name" /></div>
+            <div class="field"><label>Phone Number</label><input type="tel" id="s-phone" placeholder="+234..." /></div>
+          </div>
+          <div class="field"><label>Street Address</label><input type="text" id="s-address" placeholder="House number, street name" /></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div class="field"><label>City</label><input type="text" id="s-city" placeholder="Lagos" /></div>
+            <div class="field"><label>State</label><input type="text" id="s-state" placeholder="Lagos State" /></div>
+          </div>
+        </div>
+
+        <!-- Order summary -->
+        <div class="cart-summary">
+          <div class="cart-summary-row"><span>Subtotal</span><span id="summary-subtotal">₦0</span></div>
+          <div class="cart-summary-row"><span>Shipping</span><span>₦2,500</span></div>
+          <div class="cart-summary-row total"><span>Total</span><span id="summary-total">₦0</span></div>
+          <button class="btn checkout-btn" id="checkout-btn">Proceed to Payment</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <footer class="site-footer" id="site-footer"></footer>
+  <script src="../js/shared.js"></script>
+  <script src="../js/cart.js"></script>
+</body>
+</html>
