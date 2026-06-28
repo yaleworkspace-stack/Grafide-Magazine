@@ -23,8 +23,15 @@ function showView(name) {
 function setMsg(id, msg, show = true) {
   const el = document.getElementById(id);
   if (!el) return;
-  el.textContent    = msg;
-  el.style.display  = show ? '' : 'none';
+  el.textContent   = msg;
+  el.style.display = show ? '' : 'none';
+  // Also fire a toast so the message is always visible without devtools
+  if (show && msg) {
+    const isError   = id.includes('error');
+    const isSuccess = id.includes('success');
+    if (isError)   showToast(msg, 'error',   5000); // errors stay 5s
+    if (isSuccess) showToast(msg, 'success', 3500);
+  }
 }
 function clearMsgs(...ids) { ids.forEach(id => setMsg(id, '', false)); }
 

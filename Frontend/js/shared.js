@@ -112,16 +112,31 @@ const fmt = d => { try { return new Date(d).toLocaleDateString('en-GB',{day:'num
 const coverUrl = a => (a?.coverImageUrls && a.coverImageUrls[0]) || '/images/logo.png';
 
 // ── Toast ───────────────────────────────────────────────────────
-let _toast = null;
-function showToast(msg) {
+let _toast    = null;
+let _toastTimer = null;
+function showToast(msg, type = 'default', duration = 3500) {
   if (!_toast) {
     _toast = document.createElement('div');
     _toast.className = 'toast';
     document.body.appendChild(_toast);
   }
+  // Clear any running timer so rapid messages don't stack
+  if (_toastTimer) clearTimeout(_toastTimer);
+
   _toast.textContent = msg;
+  _toast.dataset.type = type;
+
+  // Style variants
+  if (type === 'error') {
+    _toast.style.background = '#B23A48';
+  } else if (type === 'success') {
+    _toast.style.background = '#1F7A5C';
+  } else {
+    _toast.style.background = 'var(--navy)';
+  }
+
   _toast.classList.add('show');
-  setTimeout(() => _toast.classList.remove('show'), 3000);
+  _toastTimer = setTimeout(() => _toast.classList.remove('show'), duration);
 }
 
 // ── Social SVGs ─────────────────────────────────────────────────

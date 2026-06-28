@@ -3,18 +3,18 @@ package com.grafide;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import jakarta.annotation.PostConstruct;
 
-@SpringBootApplication
+// Exclude the auto-configured UserDetailsService — we use JWT only.
+// Without this exclusion Spring Boot generates a random password on startup
+// and its BasicAuthenticationFilter can intercept requests before our JwtAuthFilter.
+@SpringBootApplication(exclude = { UserDetailsServiceAutoConfiguration.class })
 public class GrafideApplication {
 
     @Value("${grafide.jwt.secret}")
     private String jwtSecret;
 
-    /**
-     * Hard fail on startup if the JWT secret looks like the dev placeholder.
-     * Prevents weak secrets from accidentally reaching production.
-     */
     @PostConstruct
     public void validateConfig() {
         if (jwtSecret == null || jwtSecret.isBlank()) {
