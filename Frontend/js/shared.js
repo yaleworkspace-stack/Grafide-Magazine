@@ -175,7 +175,7 @@ function renderHeader(activePage = '') {
 
   const authLinks = session ? [
     { label: 'Submit',          href: '/pages/submit.html',   key: 'submit' },
-    { label: 'My Submissions',  href: '/pages/submit.html#mine', key: 'mine' },
+    { label: 'My Submissions',  href: '/pages/submit.html?view=mine', key: 'mine' },
   ] : [];
 
   const editorLinks = editor ? [
@@ -218,17 +218,18 @@ function renderHeader(activePage = '') {
     <a class="logo" href="/index.html" aria-label="Grafide home">
       <img src="/images/logo.png" alt="Grafide" class="logo-img" />
     </a>
-    <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu">
-      <span></span><span></span><span></span>
-    </button>
     <nav id="main-nav" class="main-nav">
       ${linksHtml}
       ${searchHtml}
+      <div class="nav-drawer-account">${accountHtml}</div>
     </nav>
     <div class="header-right">
       ${searchHtml.replace('header-search-form','header-search-form-desk').replace('header-search-input','header-search-input-desk')}
       ${accountHtml}
-    </div>`;
+    </div>
+    <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>`;
 
   // Burger toggle
   const toggle  = document.getElementById('nav-toggle');

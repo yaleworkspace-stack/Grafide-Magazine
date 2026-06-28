@@ -640,3 +640,55 @@ ul, ol { list-style: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+
+/* ── Nav drawer account pill (mobile bottom) ────────────────────── */
+.nav-drawer-account {
+  display: none; /* shown only inside open mobile drawer */
+  margin-top: auto;
+  padding: 24px 0 8px;
+  border-top: 1px solid var(--line);
+}
+.nav-drawer-account .account-pill,
+.nav-drawer-account .nav-link {
+  font-size: 1rem;
+  letter-spacing: 0.06em;
+  padding: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* Standout sign-in button in drawer */
+.nav-drawer-account a.nav-link {
+  background: var(--navy);
+  color: #fff !important;
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  text-align: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+}
+.nav-drawer-account a.nav-link:hover { background: var(--navy-deep); }
+
+@media (max-width: 900px) {
+  .site-header { justify-content: space-between; }
+  .nav-toggle  { display: flex; }
+  .header-right { display: none; } /* hidden on mobile — account is in drawer */
+
+  .main-nav {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0;
+    width: 80vw; max-width: 340px;
+    height: 100dvh;
+    background: var(--paper);
+    z-index: 1000;
+    padding: 80px 32px 40px;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+  }
+  .main-nav.open         { transform: translateX(0); }
+  .nav-drawer-account    { display: flex; flex-direction: column; }
+}

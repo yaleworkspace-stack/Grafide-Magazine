@@ -155,3 +155,20 @@
   .queue-row { grid-template-columns: 1fr; }
   .queue-actions { justify-content: flex-start; }
 }
+
+/* ── Tab badge (pending count) ──────────────────────────────── */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cobalt);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 600;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  padding: 0 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}

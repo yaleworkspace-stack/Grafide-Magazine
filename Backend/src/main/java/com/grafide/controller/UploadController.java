@@ -46,7 +46,10 @@ public class UploadController {
             // ── Cloudinary (prod) ──────────────────────────────────
             Map<?, ?> result = cloudinary.get().uploader().upload(
                     file.getBytes(),
-                    ObjectUtils.asMap("folder", "grafide")
+                    ObjectUtils.asMap(
+                        "folder",    "grafide",
+                        "resource_type", "image"
+                    )
             );
             String url = (String) result.get("secure_url");
             return ResponseEntity.ok(Map.of("url", url));

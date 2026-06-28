@@ -13,21 +13,18 @@ function guardEditor() {
 }
 
 // ── Tab switching ────────────────────────────────────────────────
-const TABS = ['review', 'manage', 'upload', 'subscribers', 'messages', 'orders', 'products', 'brands'];
+const TABS = ['manage', 'messages', 'orders', 'products', 'brands'];
 function switchTab(name) {
   TABS.forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === name ? '' : 'none';
     document.querySelector(`[data-tab="${t}"]`)?.classList.toggle('active', t === name);
   });
   // Load tab content on first visit
-  if (name === 'review'      && !_queueLoaded)     loadQueue();
-  if (name === 'manage'      && !_manageLoaded)    loadManage();
-  if (name === 'upload'      && !_uploadInited)    initUpload();
-  if (name === 'subscribers' && !_subsLoaded)      loadSubscribers();
-  if (name === 'messages'     && !_msgsLoaded)      loadMessages();
-  if (name === 'orders'       && !_ordersLoaded)    loadOrders();
-  if (name === 'products'     && !_productsLoaded)  loadProducts();
-  if (name === 'brands'       && !_brandsLoaded)    loadBrands();
+  if (name === 'manage'   && !_manageLoaded)   loadManage();
+  if (name === 'messages' && !_msgsLoaded)     loadMessages();
+  if (name === 'orders'   && !_ordersLoaded)   loadOrders();
+  if (name === 'products' && !_productsLoaded) loadProducts();
+  if (name === 'brands'   && !_brandsLoaded)   loadBrands();
 }
 
 // ── ─── REVIEW QUEUE ────────────────────────────────────────────
@@ -115,6 +112,66 @@ let _editingId    = null;
 
 async function loadManage() {
   _manageLoaded = true;
+
+  // Load pending submissions count and show inline
+  try {
+    const queue = await Submissions.queue(_session.token);
+    if (queue.length) {
+      const manageTab = document.querySelector('[data-tab="manage"]');
+      if (manageTab && !manageTab.querySelector('.tab-badge')) {
+        manageTab.insertAdjacentHTML('beforeend',
+          `<span class="tab-badge">${queue.length}</span>`);
+      }
+      // Show pending submissions at top of manage tab
+      const pendingSection = document.getElementById('manage-pending-section');
+      if (pendingSection) {
+        pendingSection.style.display = '';
+        pendingSection.innerHTML = `
+          <h3 style="font-family:'Times New Roman',serif;font-weight:400;font-size:1.3rem;color:var(--navy);margin-bottom:16px;">
+            Pending Submissions <span style="font-size:.8rem;color:var(--cobalt);">${queue.length}</span>
+          </h3>
+          <div class="queue-list">
+            ${queue.map(s => `
+              <div class="queue-row" id="qrow-${esc(s.id)}">
+                <div>
+                  <p class="queue-title">${esc(s.title)}</p>
+                  <p class="queue-meta">By ${esc(s.authorDisplayName)} · ${esc(s.category)} · ${fmt(s.submittedAt)}</p>
+                </div>
+                <div class="queue-actions">
+                  <button class="btn sm" data-approve="${esc(s.id)}">Approve</button>
+                  <button class="btn danger sm" data-return="${esc(s.id)}">Return</button>
+                </div>
+              </div>`).join('')}
+          </div>`;
+
+        // Wire approve/return
+        pendingSection.querySelectorAll('[data-approve]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            if (!confirm('Publish this submission?')) return;
+            try {
+              await Submissions.approve(btn.dataset.approve, _session.token);
+              document.getElementById(\`qrow-\${btn.dataset.approve}\`)?.remove();
+              showToast('Published!');
+              _manageLoaded = false;
+              loadManage();
+            } catch (err) { showToast(err.message || 'Failed.'); }
+          });
+        });
+        pendingSection.querySelectorAll('[data-return]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const note = prompt('Note to author:');
+            if (!note) return;
+            try {
+              await Submissions.return(btn.dataset.return, note, _session.token);
+              document.getElementById(\`qrow-\${btn.dataset.return}\`)?.remove();
+              showToast('Returned to author.');
+            } catch (err) { showToast(err.message || 'Failed.'); }
+          });
+        });
+      }
+    }
+  } catch { /* queue load fails silently */ }
+
   try {
     const r = await Articles.list(0);
     const articles = r.articles || [];
@@ -305,9 +362,8 @@ function init() {
   const hashTab  = window.location.hash.replace('#', '');
   const startTab = TABS.includes(hashTab) ? hashTab
                  : TABS.includes(params.get('tab')) ? params.get('tab')
-                 : 'review';
+                 : 'manage';
 
-  initReturnModal();
   initEditPanel();
   initOrderFilters();
   initProductForm();

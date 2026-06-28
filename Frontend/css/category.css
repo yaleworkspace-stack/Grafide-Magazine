@@ -54,17 +54,40 @@
   line-height: 1.6;
 }
 
-/* Fallback banner (no image) */
+/* Category hero banner — podcast-style dark */
 .category-banner-plain {
-  background: linear-gradient(135deg, var(--navy-deep), var(--navy));
-  padding: 56px 48px 48px;
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+  padding: 52px 48px 48px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 36px;
+  align-items: center;
 }
-.category-banner-plain .category-banner-title,
-.category-banner-plain .category-eyebrow,
-.category-banner-plain .category-banner-dek { color: inherit; }
+.category-hero-icon {
+  width: 120px;
+  height: 120px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 3.2rem;
+  line-height: 1;
+}
+.category-banner-plain .category-eyebrow      { color: var(--cobalt); margin-bottom: 12px; }
 .category-banner-plain .category-banner-title { color: #fff; }
-.category-banner-plain .category-eyebrow      { color: var(--cobalt); }
-.category-banner-plain .category-banner-dek   { color: rgba(255,255,255,0.72); }
+.category-banner-plain .category-banner-dek   { color: rgba(255,255,255,0.72); max-width: 44ch; }
+
+@media (max-width: 600px) {
+  .category-banner-plain {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 36px 24px;
+  }
+  .category-hero-icon { width: 80px; height: 80px; font-size: 2.2rem; }
+}
 
 /* ── Filter bar ─────────────────────────────────────────────── */
 .filter-bar {

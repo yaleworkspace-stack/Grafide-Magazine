@@ -30,14 +30,11 @@
 
       <!-- Tab bar -->
       <div class="editor-tabs" role="tablist">
-        <button class="editor-tab active" data-tab="review"      role="tab">Review Queue</button>
-        <button class="editor-tab"        data-tab="manage"      role="tab">Manage Articles</button>
-        <button class="editor-tab"        data-tab="upload"      role="tab">Upload Issue</button>
-        <button class="editor-tab"        data-tab="subscribers" role="tab">Subscribers</button>
-        <button class="editor-tab"        data-tab="messages"    role="tab">Messages</button>
-        <button class="editor-tab"        data-tab="orders"      role="tab">Orders</button>
-        <button class="editor-tab"        data-tab="products"    role="tab">Products</button>
-        <button class="editor-tab"        data-tab="brands"      role="tab">Brands</button>
+        <button class="editor-tab active" data-tab="manage"   role="tab">Articles</button>
+        <button class="editor-tab"        data-tab="messages" role="tab">Messages</button>
+        <button class="editor-tab"        data-tab="orders"   role="tab">Orders</button>
+        <button class="editor-tab"        data-tab="products" role="tab">Products</button>
+        <button class="editor-tab"        data-tab="brands"   role="tab">Brands</button>
       </div>
 
       <!-- ── REVIEW QUEUE ── -->
@@ -49,6 +46,8 @@
 
       <!-- ── MANAGE ARTICLES ── -->
       <div id="tab-manage" style="display:none;">
+        <!-- Pending submissions appear here inline -->
+        <div id="manage-pending-section" style="display:none;margin-bottom:36px;padding-bottom:32px;border-bottom:1px solid var(--line);"></div>
         <div class="loading"    id="manage-loading">Loading&hellip;</div>
         <div class="empty-state" id="manage-empty" style="display:none;">No published articles yet.</div>
         <div class="queue-list" id="manage-list"   style="display:none;"></div>
