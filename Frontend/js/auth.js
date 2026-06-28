@@ -72,7 +72,7 @@ function initRegister() {
     const btn = document.getElementById('register-btn');
     btn.textContent = 'Creating account…'; btn.disabled = true;
     try {
-      await Auth.register(username, password, displayName, email, editorCode || null);
+      await Auth.register(username, password, displayName, email, editorCode || "");
       setMsg('register-success', 'Account created! You can now sign in.');
       setTimeout(() => { window.location.href = '/pages/auth.html'; }, 1800);
     } catch (err) {

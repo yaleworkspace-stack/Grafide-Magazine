@@ -63,7 +63,7 @@ public class AuthController {
         String password    = body.getOrDefault("password", "");
         String displayName = body.getOrDefault("displayName", "").trim();
         String email       = body.getOrDefault("email", "").trim().toLowerCase();
-        String code        = body.getOrDefault("editorCode", "");
+        String code        = body.get("editorCode") != null ? (String) body.get("editorCode") : "";
 
         if (username.isBlank() || password.isBlank() || displayName.isBlank() || email.isBlank()) {
             throw new IllegalArgumentException("All fields are required.");
@@ -89,7 +89,7 @@ public class AuthController {
         user.setEmail(email);
         user.setDisplayName(displayName);
         user.setPassword(passwordEncoder.encode(password));
-        user.setRole(code.equals(editorCode) ? "editor" : "creator");
+        user.setRole(!code.isBlank() && editorCode.equals(code) ? "editor" : "creator");
 
         userRepo.save(user);
         return ResponseEntity.ok(Map.of("message", "Account created successfully."));
