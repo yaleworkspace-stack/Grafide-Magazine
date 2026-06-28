@@ -179,10 +179,7 @@ function renderHeader(activePage = '') {
   ] : [];
 
   const editorLinks = editor ? [
-    { label: 'Review Queue', href: '/pages/editor.html#review',       key: 'review' },
-    { label: 'Manage',       href: '/pages/editor.html#manage',       key: 'manage' },
-    { label: 'Upload Issue', href: '/pages/editor.html#upload',       key: 'upload' },
-    { label: 'Subscribers',  href: '/pages/editor.html#subscribers',  key: 'subscribers' },
+    { label: 'Manage',  href: '/pages/editor.html', key: 'editor' },
   ] : [];
 
   const allLinks = [...navLinks, ...authLinks, ...editorLinks];
@@ -221,7 +218,12 @@ function renderHeader(activePage = '') {
     <nav id="main-nav" class="main-nav">
       ${linksHtml}
       ${searchHtml}
-      <div class="nav-drawer-account">${accountHtml}</div>
+      <div class="nav-drawer-account">
+        ${session
+          ? `<button class="drawer-signout-btn" id="drawer-signout-btn">Sign Out</button>`
+          : `<a href="/pages/auth.html" class="drawer-signin-btn">Sign In</a>`
+        }
+      </div>
     </nav>
     <div class="header-right">
       ${searchHtml.replace('header-search-form','header-search-form-desk').replace('header-search-input','header-search-input-desk')}
@@ -259,8 +261,11 @@ function renderHeader(activePage = '') {
     });
   });
 
-  // Sign out
+  // Sign out — both header pill and drawer
   document.getElementById('signout-btn')?.addEventListener('click', () => {
+    clearSession(); window.location.href = '/index.html';
+  });
+  document.getElementById('drawer-signout-btn')?.addEventListener('click', () => {
     clearSession();
     window.location.href = '/index.html';
   });

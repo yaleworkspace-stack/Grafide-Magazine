@@ -692,3 +692,98 @@ ul, ol { list-style: none; }
   .main-nav.open         { transform: translateX(0); }
   .nav-drawer-account    { display: flex; flex-direction: column; }
 }
+
+/* ════════════════════════════════════════════════════════════════
+   FIX BATCH 6
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Fix 1: Name + editor badge stay in header-right on mobile ── */
+@media (max-width: 900px) {
+  /* Keep account pill visible next to hamburger */
+  .header-right {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    order: 2;
+  }
+  /* But hide the search in header-right on mobile (it's in the drawer) */
+  .header-right .header-search { display: none; }
+
+  /* Push hamburger to far right */
+  .nav-toggle { order: 3; margin-left: 8px; }
+  .logo       { order: 1; margin-right: auto; }
+}
+
+/* ── Fix 3: Drawer sign in / sign out — standout buttons ─────── */
+.drawer-signin-btn,
+.drawer-signout-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 14px 24px;
+  border-radius: var(--radius-sm);
+  font-family: 'Jost', sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  transition: background var(--transition);
+}
+.drawer-signin-btn {
+  background: var(--navy);
+  color: #fff;
+}
+.drawer-signin-btn:hover { background: var(--navy-deep); }
+.drawer-signout-btn {
+  background: transparent;
+  color: var(--navy);
+  border: 1.5px solid var(--navy);
+}
+.drawer-signout-btn:hover { background: var(--navy); color: #fff; }
+
+/* ── Fix 4: Toast — from top, baby-blue style ────────────────── */
+.toast {
+  position: fixed;
+  top: 80px !important;
+  bottom: auto !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) translateY(-12px) !important;
+  background: rgba(219, 242, 250, 0.97) !important;
+  color: var(--navy) !important;
+  border: 1.5px solid var(--cobalt) !important;
+  padding: 14px 24px !important;
+  border-radius: 10px !important;
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  box-shadow: 0 6px 24px rgba(91,196,232,0.18) !important;
+  max-width: 340px !important;
+  width: calc(100vw - 48px) !important;
+  text-align: center !important;
+  z-index: 9999 !important;
+  opacity: 0 !important;
+  transition: opacity 0.25s ease, transform 0.25s ease !important;
+  pointer-events: none !important;
+}
+.toast.show {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+/* Error toasts stay red */
+.toast[data-type="error"] {
+  background: rgba(251, 230, 230, 0.97) !important;
+  border-color: #B23A48 !important;
+  color: #B23A48 !important;
+}
+/* Success toasts stay green */
+.toast[data-type="success"] {
+  background: rgba(225, 244, 237, 0.97) !important;
+  border-color: #1F7A5C !important;
+  color: #1F7A5C !important;
+}
+
+/* ── Fix 6: Double text — hide any duplicate banner inside section ─ */
+.category-banner-plain + .category-banner-plain { display: none; }

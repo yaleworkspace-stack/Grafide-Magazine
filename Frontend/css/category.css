@@ -67,14 +67,16 @@
   width: 120px;
   height: 120px;
   border-radius: 16px;
-  background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(91,196,232,0.25);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 3.2rem;
-  line-height: 1;
+}
+.category-hero-icon svg {
+  width: 48px;
+  height: 48px;
 }
 .category-banner-plain .category-eyebrow      { color: var(--cobalt); margin-bottom: 12px; }
 .category-banner-plain .category-banner-title { color: #fff; }

@@ -173,8 +173,8 @@ async function loadManage() {
   } catch { /* queue load fails silently */ }
 
   try {
-    const r = await Articles.list(0);
-    const articles = r.articles || [];
+    const r = await Api.get('/articles?page=0&size=50', _session.token);
+    const articles = (r.articles || r || []);
     document.getElementById('manage-loading').style.display = 'none';
     if (!articles.length) { document.getElementById('manage-empty').style.display = ''; return; }
 
