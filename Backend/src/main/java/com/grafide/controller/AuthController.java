@@ -68,11 +68,17 @@ public class AuthController {
         if (username.isBlank() || password.isBlank() || displayName.isBlank() || email.isBlank()) {
             throw new IllegalArgumentException("All fields are required.");
         }
+        if (username.contains("@") || username.contains(" ")) {
+            throw new IllegalArgumentException("Username cannot contain @ or spaces. Use letters, numbers, and underscores only.");
+        }
+        if (username.length() < 3) {
+            throw new IllegalArgumentException("Username must be at least 3 characters.");
+        }
         if (password.length() < 6) {
             throw new IllegalArgumentException("Password must be at least 6 characters.");
         }
         if (userRepo.existsByUsername(username)) {
-            throw new IllegalArgumentException("Username is already taken.");
+            throw new IllegalArgumentException("That username is already taken. Please choose another.");
         }
         if (userRepo.existsByEmail(email)) {
             throw new IllegalArgumentException("An account with that email already exists.");
