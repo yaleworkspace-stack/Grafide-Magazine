@@ -5,52 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Editor Dashboard — Grafide</title>
   <meta name="robots" content="noindex, nofollow" />
-
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css" rel="stylesheet" />
-
   <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png" />
   <link rel="shortcut icon" href="../favicon.ico" />
   <meta name="theme-color" content="#FBF9F4" />
-
   <link rel="stylesheet" href="../css/styles.css" />
   <link rel="stylesheet" href="../css/editor.css" />
   <link rel="stylesheet" href="../css/submit.css" />
 </head>
 <body>
-
   <header class="site-header" id="site-header"></header>
 
   <main id="main-content">
     <div class="editor-page">
       <h1>Editor Dashboard</h1>
-      <p class="editor-sub">Manage submissions, articles, magazine issues, and subscribers.</p>
+      <p class="editor-sub">Manage content, orders, brands and subscribers.</p>
 
       <!-- Tab bar -->
       <div class="editor-tabs" role="tablist">
-        <button class="editor-tab active" data-tab="manage"   role="tab">Articles</button>
-        <button class="editor-tab"        data-tab="messages" role="tab">Messages</button>
-        <button class="editor-tab"        data-tab="orders"   role="tab">Orders</button>
-        <button class="editor-tab"        data-tab="products" role="tab">Products</button>
-        <button class="editor-tab"        data-tab="brands"   role="tab">Brands</button>
+        <button class="editor-tab active" data-tab="articles"     role="tab">Articles</button>
+        <button class="editor-tab"        data-tab="queue"        role="tab">Review Queue</button>
+        <button class="editor-tab"        data-tab="messages"     role="tab">Messages</button>
+        <button class="editor-tab"        data-tab="subscribers"  role="tab">Subscribers</button>
+        <button class="editor-tab"        data-tab="orders"       role="tab">Orders</button>
+        <button class="editor-tab"        data-tab="products"     role="tab">Products</button>
+        <button class="editor-tab"        data-tab="brands"       role="tab">Brands</button>
       </div>
 
-      <!-- ── REVIEW QUEUE ── -->
-      <div id="tab-review">
-        <div class="loading"    id="queue-loading">Loading&hellip;</div>
-        <div class="empty-state" id="queue-empty" style="display:none;">No submissions in the queue.</div>
-        <div class="queue-list" id="queue-list"   style="display:none;"></div>
-      </div>
-
-      <!-- ── MANAGE ARTICLES ── -->
-      <div id="tab-manage" style="display:none;">
-        <!-- Pending submissions appear here inline -->
-        <div id="manage-pending-section" style="display:none;margin-bottom:36px;padding-bottom:32px;border-bottom:1px solid var(--line);"></div>
-        <div class="loading"    id="manage-loading">Loading&hellip;</div>
-        <div class="empty-state" id="manage-empty" style="display:none;">No published articles yet.</div>
-        <div class="queue-list" id="manage-list"   style="display:none;"></div>
+      <!-- ── ARTICLES ── -->
+      <div id="tab-articles">
+        <div class="loading"     id="articles-loading">Loading&hellip;</div>
+        <div class="empty-state" id="articles-empty" style="display:none;">No published articles yet.</div>
+        <div class="queue-list"  id="articles-list"  style="display:none;"></div>
 
         <!-- Inline edit panel -->
         <div class="edit-panel" id="edit-panel" style="display:none;">
@@ -75,24 +64,25 @@
         </div>
       </div>
 
-      <!-- ── UPLOAD MAGAZINE ISSUE ── -->
-      <div id="tab-upload" style="display:none;">
-        <div id="upload-error" class="error-text" style="display:none;"></div>
-        <div class="field"><label>Title</label><input type="text" id="f-mag-title" placeholder="Issue 04 — Spring 2025" /></div>
-        <div class="field"><label>Short Description</label><input type="text" id="f-mag-dek" placeholder="One sentence about this issue" /></div>
-        <div class="field"><label>Cover Image</label><input type="file" id="f-mag-cover" accept="image/*" /></div>
-        <div class="field">
-          <label>Issue Write-up</label>
-          <div id="upload-quill" class="quill-editor"></div>
-        </div>
-        <button class="btn" id="upload-submit-btn">Publish Issue</button>
+      <!-- ── REVIEW QUEUE ── -->
+      <div id="tab-queue" style="display:none;">
+        <div class="loading"     id="queue-loading">Loading&hellip;</div>
+        <div class="empty-state" id="queue-empty"   style="display:none;">No submissions pending review.</div>
+        <div class="queue-list"  id="queue-list"    style="display:none;"></div>
+      </div>
+
+      <!-- ── MESSAGES ── -->
+      <div id="tab-messages" style="display:none;">
+        <div class="loading"    id="msg-loading">Loading&hellip;</div>
+        <div class="empty-state" id="msg-empty"  style="display:none;">No messages yet.</div>
+        <div class="queue-list" id="msg-list"    style="display:none;"></div>
       </div>
 
       <!-- ── SUBSCRIBERS ── -->
       <div id="tab-subscribers" style="display:none;">
         <div class="loading"     id="sub-loading">Loading&hellip;</div>
-        <div class="empty-state"  id="sub-empty"  style="display:none;">No subscribers yet.</div>
-        <div id="sub-content"                     style="display:none;">
+        <div class="empty-state" id="sub-empty"  style="display:none;">No subscribers yet.</div>
+        <div id="sub-content"                    style="display:none;">
           <p class="subscribers-count" id="sub-count"></p>
           <table class="subscribers-table" id="sub-table">
             <thead><tr><th>#</th><th>Email</th><th>Subscribed</th></tr></thead>
@@ -101,29 +91,19 @@
         </div>
       </div>
 
-      <!-- ── MESSAGES ── -->
-      <div id="tab-messages" style="display:none;">
-        <div class="loading"     id="msg-loading">Loading&hellip;</div>
-        <div class="empty-state" id="msg-empty"   style="display:none;">No messages yet.</div>
-        <div class="queue-list"  id="msg-list"     style="display:none;"></div>
-      </div>
-
-
       <!-- ── ORDERS ── -->
       <div id="tab-orders" style="display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn ghost sm order-filter-btn active" data-status="">All</button>
-            <button class="btn ghost sm order-filter-btn" data-status="PENDING">Pending</button>
-            <button class="btn ghost sm order-filter-btn" data-status="PAID">Paid</button>
-            <button class="btn ghost sm order-filter-btn" data-status="PROCESSING">Processing</button>
-            <button class="btn ghost sm order-filter-btn" data-status="SHIPPED">Shipped</button>
-            <button class="btn ghost sm order-filter-btn" data-status="DELIVERED">Delivered</button>
-          </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+          <button class="btn ghost sm order-filter-btn active" data-status="">All</button>
+          <button class="btn ghost sm order-filter-btn" data-status="PENDING">Pending</button>
+          <button class="btn ghost sm order-filter-btn" data-status="PAID">Paid</button>
+          <button class="btn ghost sm order-filter-btn" data-status="PROCESSING">Processing</button>
+          <button class="btn ghost sm order-filter-btn" data-status="SHIPPED">Shipped</button>
+          <button class="btn ghost sm order-filter-btn" data-status="DELIVERED">Delivered</button>
         </div>
-        <div class="loading"    id="orders-loading">Loading&hellip;</div>
-        <div class="empty-state" id="orders-empty" style="display:none;">No orders yet.</div>
-        <div class="queue-list" id="orders-list"   style="display:none;"></div>
+        <div class="loading"     id="orders-loading">Loading&hellip;</div>
+        <div class="empty-state" id="orders-empty"  style="display:none;">No orders yet.</div>
+        <div class="queue-list"  id="orders-list"   style="display:none;"></div>
       </div>
 
       <!-- ── PRODUCTS ── -->
@@ -131,8 +111,6 @@
         <div style="margin-bottom:24px;">
           <button class="btn sm" id="add-product-btn">+ Add Product</button>
         </div>
-
-        <!-- Add / Edit product form -->
         <div class="edit-panel" id="product-form-panel" style="display:none;">
           <h3 id="product-form-title">Add Product</h3>
           <div id="product-form-error" class="error-text" style="display:none;"></div>
@@ -152,9 +130,7 @@
           <div class="field"><label>Stock</label><input type="number" id="pf-stock" min="0" /></div>
           <div class="field">
             <label>Brand <span class="field-hint">(leave blank for Grafide own product)</span></label>
-            <select id="pf-brand">
-              <option value="">Grafide (own product)</option>
-            </select>
+            <select id="pf-brand"><option value="">Grafide (own product)</option></select>
           </div>
           <div class="field">
             <label>Product Images</label>
@@ -166,10 +142,9 @@
             <button class="btn ghost" id="pf-cancel-btn">Cancel</button>
           </div>
         </div>
-
-        <div class="loading"    id="products-loading">Loading&hellip;</div>
-        <div class="empty-state" id="products-empty" style="display:none;">No products yet.</div>
-        <div class="queue-list" id="products-list"   style="display:none;"></div>
+        <div class="loading"     id="products-loading">Loading&hellip;</div>
+        <div class="empty-state" id="products-empty"  style="display:none;">No products yet.</div>
+        <div class="queue-list"  id="products-list"   style="display:none;"></div>
       </div>
 
       <!-- ── BRANDS ── -->
@@ -180,9 +155,9 @@
           <button class="btn ghost sm brand-filter-btn" data-status="approved">Approved</button>
           <button class="btn ghost sm brand-filter-btn" data-status="rejected">Rejected</button>
         </div>
-        <div class="loading"    id="brands-loading">Loading&hellip;</div>
-        <div class="empty-state" id="brands-empty" style="display:none;">No brand applications yet.</div>
-        <div class="queue-list" id="brands-list"   style="display:none;"></div>
+        <div class="loading"     id="brands-loading">Loading&hellip;</div>
+        <div class="empty-state" id="brands-empty"  style="display:none;">No brand applications yet.</div>
+        <div class="queue-list"  id="brands-list"   style="display:none;"></div>
       </div>
 
     </div>

@@ -17,7 +17,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class UploadController {
 
-    // Optional — only present in prod (cloudinary mode)
     private final Optional<Cloudinary> cloudinary;
 
     @Value("${grafide.storage.mode:local}")
@@ -36,25 +35,33 @@ public class UploadController {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("No file provided.");
         }
-
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new IllegalArgumentException("Only image files are accepted.");
         }
 
         if ("cloudinary".equals(storageMode) && cloudinary.isPresent()) {
-            // ── Cloudinary (prod) ──────────────────────────────────
-            Map<?, ?> result = cloudinary.get().uploader().upload(
-                    file.getBytes(),
-                    ObjectUtils.asMap(
-                        "folder",    "grafide",
-                        "resource_type", "image"
-                    )
-            );
-            String url = (String) result.get("secure_url");
-            return ResponseEntity.ok(Map.of("url", url));
+            try {
+                // Use unsigned-style upload with just timestamp — no extra params that break signing
+                Map<?, ?> result = cloudinary.get().uploader().upload(
+                        file.getBytes(),
+                        ObjectUtils.asMap(
+                            "folder", "grafide"
+                        )
+                );
+                String url = (String) result.get("secure_url");
+                if (url == null) {
+                    throw new RuntimeException("Cloudinary returned no URL. Check CLOUDINARY_URL env var.");
+                }
+                return ResponseEntity.ok(Map.of("url", url));
+            } catch (Exception e) {
+                // Log full error to Render logs
+                System.err.println("[Grafide Upload] Cloudinary error: " + e.getMessage());
+                e.printStackTrace();
+                throw new RuntimeException("Image upload failed: " + e.getMessage());
+            }
         } else {
-            // ── Local disk (dev) ───────────────────────────────────
+            // Local disk
             String ext      = getExtension(file.getOriginalFilename());
             String filename = UUID.randomUUID() + "." + ext;
             Path dir        = Paths.get(localPath);

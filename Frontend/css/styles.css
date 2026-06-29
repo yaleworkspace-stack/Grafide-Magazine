@@ -787,3 +787,36 @@ ul, ol { list-style: none; }
 
 /* ── Fix 6: Double text — hide any duplicate banner inside section ─ */
 .category-banner-plain + .category-banner-plain { display: none; }
+
+/* ════════════════════════════════════════════════════════════════
+   FIX BATCH 7
+   ════════════════════════════════════════════════════════════════ */
+
+/* Fix 1: Nav drawer starts flush under header bar */
+@media (max-width: 900px) {
+  .main-nav {
+    top: 0 !important;
+    padding-top: 72px !important; /* same as header height */
+  }
+  /* Desktop sign out hidden on mobile — sign out is in drawer */
+  .desktop-signout { display: none !important; }
+}
+
+/* Desktop: show desktop sign out normally */
+@media (min-width: 901px) {
+  .desktop-signout {
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--navy);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px 0;
+    transition: color var(--transition);
+  }
+  .desktop-signout:hover { color: var(--cobalt); }
+  /* Hide drawer sign out on desktop */
+  .drawer-signout-btn,
+  .drawer-signin-btn { display: none; }
+}

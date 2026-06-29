@@ -73,6 +73,12 @@ public class SecurityConfig {
                 // All other upload routes remain editor-only
                 .requestMatchers(HttpMethod.POST,   "/api/upload/**").hasRole("EDITOR")
 
+                // ── Portfolio ────────────────────────────────────────
+                .requestMatchers(HttpMethod.GET,    "/api/portfolio/**").permitAll()
+                .requestMatchers(HttpMethod.POST,   "/api/portfolio").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.PUT,    "/api/portfolio/**").hasRole("EDITOR")
+                .requestMatchers(HttpMethod.DELETE, "/api/portfolio/**").hasRole("EDITOR")
+
                 // ── Shop — public ────────────────────────────────────
                 .requestMatchers(HttpMethod.GET,  "/api/shop/products/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/brands/apply").permitAll()

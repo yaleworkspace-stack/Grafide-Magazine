@@ -179,7 +179,8 @@ function renderHeader(activePage = '') {
   ] : [];
 
   const editorLinks = editor ? [
-    { label: 'Manage',  href: '/pages/editor.html', key: 'editor' },
+    { label: 'Dashboard',         href: '/pages/editor.html',            key: 'editor' },
+    { label: 'Portfolio Manager', href: '/pages/portfolio-manage.html',  key: 'portfolio-manage' },
   ] : [];
 
   const allLinks = [...navLinks, ...authLinks, ...editorLinks];
@@ -200,14 +201,19 @@ function renderHeader(activePage = '') {
       </button>
     </form>`;
 
+  // header-right pill: name + editor badge only (no sign out — that's in drawer)
   const accountHtml = session
     ? `<div class="account-pill">
         <span class="diamond"></span>
         <span>${esc(session.displayName)}</span>
         ${editor ? '<span class="editor-badge">Editor</span>' : ''}
-        <button class="nav-link" id="signout-btn">Sign Out</button>
        </div>`
     : `<a href="/pages/auth.html" class="nav-link${activePage==='auth'?' active':''}">Sign In</a>`;
+
+  // Desktop sign out — shown only in header-right on desktop
+  const desktopSignOut = session
+    ? `<button class="nav-link desktop-signout" id="signout-btn">Sign Out</button>`
+    : '';
 
   const el = document.getElementById('site-header');
   if (!el) return;
@@ -228,6 +234,7 @@ function renderHeader(activePage = '') {
     <div class="header-right">
       ${searchHtml.replace('header-search-form','header-search-form-desk').replace('header-search-input','header-search-input-desk')}
       ${accountHtml}
+      ${desktopSignOut}
     </div>
     <button id="nav-toggle" class="nav-toggle" aria-label="Toggle menu">
       <span></span><span></span><span></span>
@@ -321,6 +328,7 @@ function renderFooter(subMsg = '', subErr = false) {
         <a href="/pages/work-with-us.html">Work With Us</a>
         <a href="/pages/brand-apply.html">Partner With Us</a>
         <a href="/pages/orders.html">My Orders</a>
+        <a href="/pages/about.html#portfolio">Our Work</a>
       </div>
 
       <div class="footer-col">

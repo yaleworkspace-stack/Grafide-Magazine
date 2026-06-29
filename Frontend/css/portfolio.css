@@ -1,0 +1,224 @@
+/* ============================================================
+   GRAFIDE — portfolio.css
+   About page: hero, values, portfolio showcase, design section
+   ============================================================ */
+
+/* ── About hero ─────────────────────────────────────────────── */
+.about-hero {
+  background: linear-gradient(135deg, var(--navy-deep) 0%, var(--navy) 100%);
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  padding: 80px 48px;
+}
+.about-hero-inner { max-width: 640px; }
+.about-eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.about-hero-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(2.6rem, 6vmin, 4rem);
+  color: #fff;
+  font-weight: 400;
+  line-height: 1.1;
+  margin-bottom: 20px;
+}
+.about-hero-dek {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.7;
+  max-width: 52ch;
+}
+
+/* ── Values grid ────────────────────────────────────────────── */
+.values-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+.value-card {
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--paper);
+}
+.value-icon {
+  width: 52px;
+  height: 52px;
+  background: rgba(91,196,232,0.1);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+.value-card h3 {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.2rem;
+  color: var(--navy);
+  margin-bottom: 10px;
+  font-weight: 400;
+}
+.value-card p {
+  font-size: 0.92rem;
+  color: var(--muted);
+  line-height: 1.65;
+  font-weight: 300;
+}
+
+/* ── Portfolio section ──────────────────────────────────────── */
+.portfolio-section { background: var(--cream); }
+
+.portfolio-filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 36px;
+}
+.portfolio-filter-btn {
+  font-family: 'Jost', sans-serif;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 18px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--navy);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.portfolio-filter-btn:hover,
+.portfolio-filter-btn.active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+
+/* ── Portfolio grid ─────────────────────────────────────────── */
+.portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+
+/* Featured item spans 2 columns */
+.portfolio-item.featured {
+  grid-column: span 2;
+}
+
+.portfolio-item {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 4/3;
+  background: var(--line);
+}
+.portfolio-item.featured { aspect-ratio: 16/9; }
+
+.portfolio-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s ease;
+}
+.portfolio-item:hover img { transform: scale(1.05); }
+
+.portfolio-item-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(18,21,46,0.88) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 24px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.portfolio-item:hover .portfolio-item-overlay { opacity: 1; }
+
+.portfolio-item-cat {
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cobalt);
+  margin-bottom: 6px;
+}
+.portfolio-item-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 1.15rem;
+  color: #fff;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+.portfolio-item-client {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.65);
+}
+
+/* ── Grafide Design section ─────────────────────────────────── */
+.about-design-section { background: var(--navy-deep); }
+.about-design-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 48px;
+  align-items: center;
+}
+.about-design-title {
+  font-family: 'Times New Roman', Times, serif;
+  font-size: clamp(2rem, 4vmin, 3rem);
+  color: #fff;
+  font-weight: 400;
+  margin-bottom: 14px;
+  line-height: 1.15;
+}
+.about-design-dek {
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.7;
+  max-width: 52ch;
+}
+.about-design-visual { flex-shrink: 0; }
+.design-icon-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.design-icon-grid span {
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(91,196,232,0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--cobalt);
+  letter-spacing: 0.05em;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .about-hero           { padding: 56px 24px; min-height: 320px; }
+  .values-grid          { grid-template-columns: 1fr; gap: 16px; }
+  .portfolio-grid       { grid-template-columns: 1fr 1fr; }
+  .portfolio-item.featured { grid-column: span 2; }
+  .about-design-inner   { grid-template-columns: 1fr; }
+  .about-design-visual  { display: none; }
+  .portfolio-item-overlay { opacity: 1; background: linear-gradient(180deg,transparent 50%,rgba(18,21,46,0.82) 100%); }
+}
+@media (max-width: 600px) {
+  .portfolio-grid       { grid-template-columns: 1fr; gap: 2px; }
+  .portfolio-item.featured { grid-column: span 1; }
+}

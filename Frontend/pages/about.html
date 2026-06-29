@@ -13,67 +13,104 @@
   <meta name="theme-color" content="#FBF9F4" />
   <link rel="stylesheet" href="../css/styles.css" />
   <link rel="stylesheet" href="../css/static.css" />
+  <link rel="stylesheet" href="../css/portfolio.css" />
 </head>
 <body>
   <header class="site-header" id="site-header"></header>
+
   <main id="main-content">
-    <div class="static-page">
-      <p class="static-eyebrow"><span class="diamond"></span> Our Story</p>
-      <h1>A Space for the Art of Fashion</h1>
-      <p class="static-lead">
-        Grafide is a creative agency and fashion magazine brand — a space dedicated to
-        fashion, culture, and photography. We exist to amplify the voices of creatives
-        who are shaping the visual culture of our time.
-      </p>
 
-      <div class="static-body">
-        <h2>Who We Are</h2>
-        <p>
-          Born from a deep love of fashion and visual storytelling, Grafide brings together
-          photographers, writers, stylists, and designers under one platform. We are independent,
-          intentional, and unapologetically creative.
+    <!-- ── Hero ── -->
+    <div class="about-hero">
+      <div class="about-hero-inner">
+        <p class="about-eyebrow"><span class="diamond"></span> Our Story</p>
+        <h1 class="about-hero-title">A Space for the<br/>Art of Fashion</h1>
+        <p class="about-hero-dek">
+          Grafide is a creative agency and fashion magazine brand — built to amplify the
+          voices of creatives shaping visual culture today.
         </p>
-        <p>
-          From editorial features and long-form culture writing to our podcast and print magazine,
-          everything we publish is crafted with care and a commitment to beauty in all its forms.
-        </p>
-
-        <h2>Our Values</h2>
       </div>
+    </div>
 
+    <!-- ── Values ── -->
+    <section class="section">
+      <div class="section-head">
+        <h2>What We Stand For</h2>
+        <div class="line"></div>
+      </div>
       <div class="values-grid">
         <div class="value-card">
-          <span class="diamond diamond-lg"></span>
+          <div class="value-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M16 4l3 9h9l-7 5 3 9-8-6-8 6 3-9-7-5h9z" stroke="#5BC4E8" stroke-width="1.8" stroke-linejoin="round"/></svg>
+          </div>
           <h3>Authenticity</h3>
           <p>We publish work that is honest, original, and grounded in genuine creative vision.</p>
         </div>
         <div class="value-card">
-          <span class="diamond diamond-lg"></span>
+          <div class="value-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><path d="M6 26l6-6m0 0l4-12 4 12m0 0l6 6" stroke="#5BC4E8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
           <h3>Craft</h3>
           <p>Every image, word, and design choice is held to the highest editorial standard.</p>
         </div>
         <div class="value-card">
-          <span class="diamond diamond-lg"></span>
+          <div class="value-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#5BC4E8" stroke-width="1.8"/><path d="M10 16c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="#5BC4E8" stroke-width="1.8" stroke-linecap="round"/><circle cx="16" cy="19" r="3" stroke="#5BC4E8" stroke-width="1.8"/></svg>
+          </div>
           <h3>Community</h3>
-          <p>We champion emerging voices and create space for creatives at every stage of their journey.</p>
+          <p>We champion emerging voices and create space for creatives at every stage.</p>
         </div>
       </div>
+    </section>
 
-      <div class="static-body">
-        <h2>The Grafide Design Initiative</h2>
-        <p>
-          Grafide Design is our education sub-initiative — a learning platform for graphic design,
-          covering tools like Photoshop, Illustrator, CorelDraw, Canva, and more. Through structured
-          courses and community mentorship, we're building the next generation of African creatives.
-        </p>
-        <p>
-          <a href="https://grafide.design" target="_blank" rel="noopener">Visit Grafide Design &rarr;</a>
-        </p>
+    <!-- ── Portfolio Showcase ── -->
+    <section class="section portfolio-section">
+      <div class="section-head">
+        <h2>Our Work</h2>
+        <div class="line"></div>
       </div>
-    </div>
+
+      <!-- Category filter -->
+      <div class="portfolio-filters">
+        <button class="portfolio-filter-btn active" data-cat="">All</button>
+        <button class="portfolio-filter-btn" data-cat="Editorial">Editorial</button>
+        <button class="portfolio-filter-btn" data-cat="Photography">Photography</button>
+        <button class="portfolio-filter-btn" data-cat="Design">Design</button>
+        <button class="portfolio-filter-btn" data-cat="Campaign">Campaign</button>
+      </div>
+
+      <div class="loading"         id="portfolio-loading">Loading&hellip;</div>
+      <div class="empty-state"     id="portfolio-empty"   style="display:none;">No work showcased yet.</div>
+      <div class="portfolio-grid"  id="portfolio-grid"    style="display:none;"></div>
+    </section>
+
+    <!-- ── Grafide Design ── -->
+    <section class="section about-design-section">
+      <div class="about-design-inner">
+        <div>
+          <p class="about-eyebrow"><span class="diamond"></span> Grafide Design</p>
+          <h2 class="about-design-title">Learn Graphic Design</h2>
+          <p class="about-design-dek">
+            Grafide Design is our education platform — courses on Photoshop, Illustrator,
+            CorelDraw, Canva, and more. Building the next generation of African creatives.
+          </p>
+          <a href="https://grafide.design" target="_blank" rel="noopener" class="btn ghost" style="margin-top:24px;display:inline-flex;">
+            Visit Grafide Design &rarr;
+          </a>
+        </div>
+        <div class="about-design-visual" aria-hidden="true">
+          <div class="design-icon-grid">
+            <span>Ps</span><span>Ai</span><span>Cd</span><span>Ca</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
+
   <footer class="site-footer" id="site-footer"></footer>
+
   <script src="../js/shared.js"></script>
-  <script>initLayout();</script>
+  <script src="../js/about.js"></script>
 </body>
 </html>
