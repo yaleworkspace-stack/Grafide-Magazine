@@ -1,6 +1,7 @@
 /* ============================================================
    GRAFIDE — portfolio-manage.js  (Hidden portfolio manager)
    URL: /pages/portfolio-manage.html  (not in nav)
+   Supports image URL paste OR file upload for all images.
    ============================================================ */
 'use strict';
 
@@ -10,37 +11,34 @@ let _coverUrl  = '';
 let _extraUrls = [];
 
 const PortfolioApi = {
-  list:   ()         => Api.get('/portfolio'),
-  create: (d, tok)   => Api.post('/portfolio', d, tok),
-  update: (id, d, tok) => Api.put(`/portfolio/${id}`, d, tok),
-  delete: (id, tok)  => Api.delete(`/portfolio/${id}`, tok),
+  list:   ()              => Api.get('/portfolio'),
+  create: (d, tok)        => Api.post('/portfolio', d, tok),
+  update: (id, d, tok)    => Api.put(`/portfolio/${id}`, d, tok),
+  delete: (id, tok)       => Api.delete(`/portfolio/${id}`, tok),
 };
 
-// ── Guard ────────────────────────────────────────────────────────
 function guard() {
   _session = getSession();
-  if (!_session || !isEditor(_session)) {
-    window.location.href = '/index.html';
-    return false;
-  }
+  if (!_session || !isEditor(_session)) { window.location.href = '/index.html'; return false; }
   return true;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────
 function show(id) { const el = document.getElementById(id); if (el) el.style.display = ''; }
 function hide(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
 function val(id)  { return (document.getElementById(id)?.value || '').trim(); }
+function isValidUrl(s) { try { new URL(s); return true; } catch { return false; } }
 
 // ── Load list ────────────────────────────────────────────────────
 async function loadList() {
-  show('pf-list-loading'); hide('pf-list-empty'); hide('pf-list');
+  show('pf-list-loading'); hide('pf-list-empty');
+  const list = document.getElementById('pf-list');
+  if (list) { list.style.display = 'none'; list.innerHTML = ''; }
+
   try {
     const items = await PortfolioApi.list();
     hide('pf-list-loading');
-
     if (!items.length) { show('pf-list-empty'); return; }
 
-    const list = document.getElementById('pf-list');
     list.innerHTML = items.map(item => `
       <div class="portfolio-manage-row" id="pmrow-${esc(item.id)}">
         <div class="portfolio-manage-thumb">
@@ -64,33 +62,28 @@ async function loadList() {
         </div>
       </div>`).join('');
 
-    // Edit handlers
     list.querySelectorAll('[data-edit]').forEach(btn => {
-      const id   = btn.dataset.edit;
-      const item = items.find(i => i.id === id);
+      const item = items.find(i => i.id === btn.dataset.edit);
       if (item) btn.addEventListener('click', () => openForm(item));
     });
-
-    // Delete handlers
     list.querySelectorAll('[data-del]').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Delete this portfolio item?')) return;
+        if (!confirm('Delete this item?')) return;
         try {
           await PortfolioApi.delete(btn.dataset.del, _session.token);
           document.getElementById(`pmrow-${btn.dataset.del}`)?.remove();
-          showToast('Item deleted.');
+          showToast('Deleted.', 'success');
           if (!list.querySelectorAll('.portfolio-manage-row').length) {
             hide('pf-list'); show('pf-list-empty');
           }
-        } catch (err) { showToast(err.message || 'Delete failed.'); }
+        } catch (err) { showToast(err.message || 'Delete failed.', 'error'); }
       });
     });
 
     list.style.display = '';
   } catch (err) {
-    hide('pf-list-loading');
-    show('pf-list-empty');
-    showToast('Failed to load items: ' + (err.message || ''));
+    hide('pf-list-loading'); show('pf-list-empty');
+    showToast('Failed to load: ' + (err.message || ''), 'error');
   }
 }
 
@@ -101,79 +94,106 @@ function openForm(item = null) {
   _extraUrls = item ? [...(item.imageUrls || [])] : [];
 
   document.getElementById('pf-form-title').textContent = item ? 'Edit Work' : 'Add Work';
-  document.getElementById('pf-ttl').value     = item?.title       || '';
-  document.getElementById('pf-client').value  = item?.client      || '';
-  document.getElementById('pf-cat').value     = item?.category    || '';
-  document.getElementById('pf-sort').value    = item?.sortOrder   ?? 0;
-  document.getElementById('pf-desc').value    = item?.description || '';
-  document.getElementById('pf-featured').checked = item?.featured || false;
-  document.getElementById('pf-cover-url').value  = _coverUrl;
-
-  renderCoverPreview();
-  renderExtraPreviews();
+  document.getElementById('pf-ttl').value              = item?.title       || '';
+  document.getElementById('pf-client').value           = item?.client      || '';
+  document.getElementById('pf-cat').value              = item?.category    || '';
+  document.getElementById('pf-sort').value             = item?.sortOrder   ?? 0;
+  document.getElementById('pf-desc').value             = item?.description || '';
+  document.getElementById('pf-featured').checked       = item?.featured    || false;
+  document.getElementById('pf-cover-url').value        = _coverUrl;
+  document.getElementById('pf-cover-url-input').value  = '';
+  document.getElementById('pf-extra-url-input').value  = '';
+  ['pf-cover-file','pf-imgs-file'].forEach(id => { const el = document.getElementById(id); if (el) el.value=''; });
 
   hide('pf-err');
+  renderCoverPreview();
+  renderExtraPreviews();
   show('portfolio-form');
-  document.getElementById('portfolio-form').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('portfolio-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ── Preview renderers ────────────────────────────────────────────
+// ── Previews ─────────────────────────────────────────────────────
 function renderCoverPreview() {
   const el = document.getElementById('pf-cover-preview');
   if (!el) return;
   el.innerHTML = _coverUrl
-    ? `<img src="${esc(_coverUrl)}" style="width:120px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--line);" />`
+    ? `<div class="cover-preview"><img src="${esc(_coverUrl)}" alt="Cover" /><button class="cover-preview-remove" id="rm-cover">&times;</button></div>`
     : '';
+  document.getElementById('rm-cover')?.addEventListener('click', () => {
+    _coverUrl = ''; document.getElementById('pf-cover-url').value = ''; renderCoverPreview();
+  });
 }
 
 function renderExtraPreviews() {
   const el = document.getElementById('pf-imgs-preview');
   if (!el) return;
   el.innerHTML = _extraUrls.map((url, i) => `
-    <div class="cover-preview">
-      <img src="${esc(url)}" alt="Preview ${i+1}" />
-      <button class="cover-preview-remove" data-rm="${i}">&times;</button>
-    </div>`).join('');
+    <div class="cover-preview"><img src="${esc(url)}" alt="img ${i+1}" /><button class="cover-preview-remove" data-rm="${i}">&times;</button></div>`
+  ).join('');
   el.querySelectorAll('[data-rm]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _extraUrls.splice(Number(btn.dataset.rm), 1);
-      renderExtraPreviews();
-    });
+    btn.addEventListener('click', () => { _extraUrls.splice(Number(btn.dataset.rm), 1); renderExtraPreviews(); });
   });
 }
 
-// ── Cover image upload ───────────────────────────────────────────
-function initCoverUpload() {
+// ── URL inputs ───────────────────────────────────────────────────
+function initUrlInputs() {
+  const coverBtn = document.getElementById('pf-cover-url-btn');
+  const extraBtn = document.getElementById('pf-extra-url-btn');
+
+  coverBtn?.addEventListener('click', () => {
+    const url = val('pf-cover-url-input');
+    if (!url || !isValidUrl(url)) { showToast('Please paste a valid image URL.', 'error'); return; }
+    _coverUrl = url;
+    document.getElementById('pf-cover-url').value      = url;
+    document.getElementById('pf-cover-url-input').value = '';
+    renderCoverPreview();
+    showToast('Cover image set.', 'success');
+  });
+
+  document.getElementById('pf-cover-url-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); coverBtn?.click(); }
+  });
+
+  extraBtn?.addEventListener('click', () => {
+    const url = val('pf-extra-url-input');
+    if (!url || !isValidUrl(url)) { showToast('Please paste a valid image URL.', 'error'); return; }
+    _extraUrls.push(url);
+    document.getElementById('pf-extra-url-input').value = '';
+    renderExtraPreviews();
+    showToast('Image added.', 'success');
+  });
+
+  document.getElementById('pf-extra-url-input')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); extraBtn?.click(); }
+  });
+}
+
+// ── File uploads ─────────────────────────────────────────────────
+function initFileUploads() {
   document.getElementById('pf-cover-file')?.addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]; if (!file) return;
+    showToast('Uploading…');
     try {
-      showToast('Uploading cover…', 'default', 8000);
       const data = await uploadImage(file);
-      _coverUrl = data.url;
+      _coverUrl  = data.url;
       document.getElementById('pf-cover-url').value = _coverUrl;
       renderCoverPreview();
       showToast('Cover uploaded.', 'success');
-    } catch (err) {
-      showToast(err.message || 'Cover upload failed.', 'error');
-    }
+    } catch { showToast('Upload failed — paste the image URL instead.', 'error'); }
+    e.target.value = '';
   });
-}
 
-// ── Extra images upload ──────────────────────────────────────────
-function initExtraUpload() {
   document.getElementById('pf-imgs-file')?.addEventListener('change', async (e) => {
     for (const file of Array.from(e.target.files)) {
+      showToast(`Uploading ${file.name}…`);
       try {
-        showToast('Uploading image…', 'default', 8000);
         const data = await uploadImage(file);
         _extraUrls.push(data.url);
         renderExtraPreviews();
-        showToast('Image uploaded.', 'success');
-      } catch (err) {
-        showToast(err.message || 'Image upload failed.', 'error');
-      }
+        showToast('Uploaded.', 'success');
+      } catch { showToast('Upload failed — paste the image URL instead.', 'error'); }
     }
+    e.target.value = '';
   });
 }
 
@@ -181,43 +201,31 @@ function initExtraUpload() {
 async function saveForm() {
   const errEl = document.getElementById('pf-err');
   hide('pf-err');
-
   const title    = val('pf-ttl');
   const category = val('pf-cat');
-  const client   = val('pf-client');
-  const desc     = val('pf-desc');
-  const sortOrder = parseInt(document.getElementById('pf-sort').value) || 0;
-  const featured  = document.getElementById('pf-featured').checked;
-  const coverUrl  = _coverUrl;
-
   if (!title || !category) {
-    errEl.textContent   = 'Title and category are required.';
-    show('pf-err'); return;
+    errEl.textContent = 'Title and category are required.'; show('pf-err'); return;
   }
-
   const payload = {
-    title, category, client, description: desc,
-    coverUrl, imageUrls: _extraUrls,
-    sortOrder, featured,
+    title, category,
+    client:      val('pf-client'),
+    description: val('pf-desc'),
+    coverUrl:    _coverUrl,
+    imageUrls:   _extraUrls,
+    sortOrder:   parseInt(document.getElementById('pf-sort').value) || 0,
+    featured:    document.getElementById('pf-featured').checked,
   };
-
   const btn = document.getElementById('pf-save');
   btn.textContent = 'Saving…'; btn.disabled = true;
-
   try {
-    if (_editingId) {
-      await PortfolioApi.update(_editingId, payload, _session.token);
-    } else {
-      await PortfolioApi.create(payload, _session.token);
-    }
+    _editingId
+      ? await PortfolioApi.update(_editingId, payload, _session.token)
+      : await PortfolioApi.create(payload, _session.token);
     showToast(_editingId ? 'Updated!' : 'Added!', 'success');
     hide('portfolio-form');
     _editingId = null;
     await loadList();
-  } catch (err) {
-    errEl.textContent   = err.message || 'Save failed.';
-    show('pf-err');
-  }
+  } catch (err) { errEl.textContent = err.message || 'Save failed.'; show('pf-err'); }
   btn.textContent = 'Save'; btn.disabled = false;
 }
 
@@ -225,14 +233,11 @@ async function saveForm() {
 function init() {
   if (!guard()) return;
   initLayout();
-
-  document.getElementById('pf-add-btn')?.addEventListener('click',    () => openForm());
-  document.getElementById('pf-cancel')?.addEventListener('click',     () => hide('portfolio-form'));
-  document.getElementById('pf-save')?.addEventListener('click',       saveForm);
-
-  initCoverUpload();
-  initExtraUpload();
-
+  document.getElementById('pf-add-btn')?.addEventListener('click', () => openForm());
+  document.getElementById('pf-cancel')?.addEventListener('click', () => { hide('portfolio-form'); _editingId = null; });
+  document.getElementById('pf-save')?.addEventListener('click', saveForm);
+  initUrlInputs();
+  initFileUploads();
   loadList();
 }
 

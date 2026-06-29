@@ -54,8 +54,16 @@
         </div>
         <div class="field">
           <label>Cover Images <span class="field-hint">(up to 5, first is the main cover)</span></label>
-          <input type="file" id="f-covers" accept="image/*" multiple />
-          <div class="cover-previews" id="cover-previews"></div>
+          <div class="img-input-group">
+            <div class="img-input-row">
+              <input type="url" class="img-url-input" id="f-cover-url-input"
+                     placeholder="Paste image URL (Cloudinary, Google Drive, Imgur…)" />
+              <button class="btn sm ghost" id="f-cover-url-btn" type="button">Add URL</button>
+            </div>
+            <div class="img-divider" style="text-align:center;">— or upload a file —</div>
+            <input type="file" id="f-covers" accept="image/*" multiple />
+          </div>
+          <div class="cover-previews" id="cover-previews" style="margin-top:10px;"></div>
         </div>
         <div class="field">
           <label>Article Body</label>
